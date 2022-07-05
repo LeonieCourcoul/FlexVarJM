@@ -35,3 +35,72 @@ You can install the development version of FlexVarJM from [GitHub](https://githu
 devtools::install_github("LeonieCourcoul/FlexVarJM")
 ```
 
+## Exemple
+
+This is an exemple in a simulated dataset. We estimated the following model with two competing events k=1 or k=2 :
+
+$$\left\{
+\begin{array}{ll}
+y_i(t_{i j})= \color{blue}\tilde{y}_i(t_{ij}) \color{black} + \epsilon_{ij} = \beta_0 + b_{0i} + (\beta_1 + b_{1i})t_{ij}+\epsilon_{i j}\\
+\lambda_{ik}(t)=\lambda_{0k}(t) \exp(\color{blue}\alpha_{1k}\tilde{y}_i(t)\color{black} + \color{red}\alpha_{\sigma k} \sigma_i \color{black})
+\end{array}
+\right.$$
+
+where : 
+
+- $\epsilon_{ij} \sim \mathcal{N}(0, \color{red}\sigma_i^2\color{black})$ with $\color{red}\log(\sigma_i) \sim \mathcal{N}(\mu_\sigma, \tau_\sigma^2)$
+
+- $b_i \sim \mathcal{N}(0, \Sigma_b)$ with $\begin{pmatrix}
+s_{0} & 0\\
+s_{01} & s_1
+\end{pmatrix}$ the decomposition cholesky of $\Sigma_b$
+
+- $\lambda_{0k}(t) = \eta_k t^{\eta_k-1}e^{\zeta_{0k}}$ : Weibull function
+
+
+
+
+``` r
+exemple <- FlexVar_JM(formFixed = y~visit,
+                      formRandom = ~ visit,
+                      formGroup = ~ID,
+                      formSurv = Surv(time, event ==1 ) ~ 1,
+                      timeVar = "visit",
+                      nb.e.a = 2,
+                      data.long = Data_exemple,
+                      variability_hetero = TRUE,
+                      sharedtype = "CV",
+                      hazard_baseline = "Weibull",
+                      competing_risk = TRUE,
+                      formSurv_CR = Surv(time, event ==2 ) ~ 1,
+                      hazard_baseline_CR = "Weibull",
+                      sharedtype_CR = "CV",
+                      S1 = 1000,
+                      S2 = 8000,
+                      nproc = 5
+                      )
+```
+
+You can access to the table of estimations and standard deviation with :
+
+``` r
+exemple$table.res
+```
+
+The computing time is given by :
+
+``` r
+exemple$time.compute
+```
+
+The output of the marqLevAlg algorithm is in :
+
+``` r
+exemple$result
+```
+
+Finally, some elements of control are in :
+
+``` r
+exemple$control
+```
