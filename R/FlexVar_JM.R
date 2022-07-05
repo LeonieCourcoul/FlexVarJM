@@ -101,7 +101,7 @@
 #'                       formSurv = Surv(time, event ==1 ) ~ 1,
 #'                       timeVar = "visit",
 #'                       nb.e.a = 2,
-#'                       data.long = Data_exemple,
+#'                       data.long = Data_toy,
 #'                       variability_hetero = TRUE,
 #'                       sharedtype = "CV",
 #'                       hazard_baseline = "Weibull",
