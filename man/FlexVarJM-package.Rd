@@ -8,6 +8,14 @@
 \description{
 This package allows to estimate joint models with a subject-specific variance.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/LeonieCourcoul/FlexVarJM}
+  \item Report bugs at \url{https://github.com/LeonieCourcoul/FlexVarJM/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Léonie Courcoul \email{leonie.courcoul@u-bordeaux.fr} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
 
