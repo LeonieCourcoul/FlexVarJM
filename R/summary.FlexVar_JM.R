@@ -1,3 +1,5 @@
+#' @export
+
 summary.FlexVar_JM <- function(object,...)
 {
   x <- object
@@ -7,12 +9,12 @@ summary.FlexVar_JM <- function(object,...)
   cat("with heterogenous variability and fitted by maximum likelihood method", "\n")
 
   #ajouter le code d'appelle à la fonction
-
+  cat("\n")
   cat("Statistical Model:", "\n")
   cat(paste("    Nuumber of subjects:", x$control$Ind),"\n")
   cat(paste("    Number of observations:", nrow(x$control$data.long)),"\n")
-  cat(paste("    Number of events 1:", ),"\n")
-  cat(paste("    Number of events 2:", ),"\n")
+  #cat(paste("    Number of events 1:", ),"\n")
+  #cat(paste("    Number of events 2:", ),"\n")
 
   cat("\n")
   cat("Iteration process:", "\n")
@@ -24,21 +26,25 @@ summary.FlexVar_JM <- function(object,...)
   else{
     cat("\n")
     cat(paste("     Number of iterations: ",x$control$niter), "\n")
-    cat(paste("     Convergence criteria: parameters =" ,signif(x$control$critconv[1],3)), "\n")
-    cat(paste("                         : likelihood =" ,signif(x$control$critconv[2],3)), "\n")
-    cat(paste("                         : second derivatives =" ,signif(x$control$critconv[3],3)), "\n")
-    cat(paste("Time of computation :" ,round(x$time.compute,3)))
+    cat(paste("     Convergence criteria: parameters =" ,signif(x$control$convcrit[1],3)), "\n")
+    cat(paste("                         : likelihood =" ,signif(x$control$convcrit[2],3)), "\n")
+    cat(paste("                         : second derivatives =" ,signif(x$control$convcrit[3],3)), "\n")
+    cat(paste("     Time of computation :" ,round(x$time.compute,3)))
   }
 
   cat("\n")
+  cat("\n")
   cat("Goodness-of-fit statistics:")
-  #A compléter
+  cat("\n")
+  cat(paste("    Likelihood: ", x$control$likelihood_value),"\n")
 
   cat("\n")
   cat("Maximum Likelihood Estimates:")
   cat("\n")
   cat("Longitudinal model:")
+  cat("\n")
   cat("     Cholesky matrix of the random effects:")
+  cat("\n")
 
   chol_mat <- x$table.res$Estimation[grep("^chol", rownames(x$table.res))]
   chol_mat2 <- matrix(0,nrow = quad(1,1,-2*length(chol_mat)), ncol =  quad(1,1,-2*length(chol_mat)) )
@@ -65,7 +71,7 @@ summary.FlexVar_JM <- function(object,...)
   cat("     Variability:")
   var_tab <- x$table.res[grep("log.sigma", rownames(x$table.res)),]
   var_tab$Wald <- var_tab$Estimation/var_tab$SE
-  var_tab$pvalue <- 1 - pchisq(var_tab**2,1)
+  var_tab$pvalue <- 1 - pchisq(var_tab$Wald**2,1)
   colnames(var_tab) <- c("Coeff", "SE", "Wald", "P-value")
   cat("\n")
   print(var_tab)
@@ -77,23 +83,26 @@ summary.FlexVar_JM <- function(object,...)
   cat("    First event:")
   e1_surv_tab <- x$table.res[grep(".e1", rownames(x$table.res)),]
   e1_surv_tab$Wald <- e1_surv_tab$Estimation/e1_surv_tab$SE
-  e1_surv_tab$pvalue <- 1 - pchisq(e1_surv_tab**2,1)
+  e1_surv_tab$pvalue <- 1 - pchisq(e1_surv_tab$Wald**2,1)
 
-  e1_reg <- e1_surv_tab[grep("alpha.", rownames(e1_surv_tab)),]
-
+  e1_reg <- e1_surv_tab[grep("alpha.e1_", rownames(e1_surv_tab)),]
+  e1_reg_other <- rbind(e1_surv_tab[grep("alpha.sigma", rownames(e1_surv_tab)),],
+                        e1_surv_tab[grep("alpha.current", rownames(e1_surv_tab)),],
+                        e1_surv_tab[grep("alpha.slope", rownames(e1_surv_tab)),])
   r.name.e1_reg <- strsplit(rownames(e1_reg), "_")
   r.name.e1_reg2 <- c()
   for(l in r.name.e1_reg){
     r.name.e1_reg2 <- c(r.name.e1_reg2, l[-1])
   }
   rownames(e1_reg) <- r.name.e1_reg2
+  e1_reg <- rbind(e1_reg,e1_reg_other)
 
   e1_baz <- rbind(e1_surv_tab[grep("weibull.", rownames(e1_surv_tab)),],
                   e1_surv_tab[grep("sp", rownames(e1_surv_tab)),])
   colnames(e1_baz) <- c("Coeff", "SE", "Wald", "P-value")
   colnames(e1_reg) <- c("Coeff", "SE", "Wald", "P-value")
 
-  if(!is.null(e1_baz)){
+  if(nrow(e1_baz)!=0){
     cat("\n")
     cat("       Baseline:")
     print(e1_baz)
@@ -109,9 +118,12 @@ summary.FlexVar_JM <- function(object,...)
     cat("    Second event:")
     e2_surv_tab <- x$table.res[grep(".e2", rownames(x$table.res)),]
     e2_surv_tab$Wald <- e2_surv_tab$Estimation/e2_surv_tab$SE
-    e2_surv_tab$pvalue <- 1 - pchisq(e2_surv_tab**2,1)
+    e2_surv_tab$pvalue <- 1 - pchisq(e2_surv_tab$Wald**2,1)
 
-    e2_reg <- e2_surv_tab[grep("alpha.", rownames(e2_surv_tab)),]
+    e2_reg <- e2_surv_tab[grep("alpha.e2_", rownames(e2_surv_tab)),]
+    e2_reg_other <- rbind(e2_surv_tab[grep("alpha.sigma", rownames(e2_surv_tab)),],
+                          e2_surv_tab[grep("alpha.current", rownames(e2_surv_tab)),],
+                          e2_surv_tab[grep("alpha.slope", rownames(e2_surv_tab)),])
 
     r.name.e2_reg <- strsplit(rownames(e2_reg), "_")
     r.name.e2_reg2 <- c()
@@ -119,13 +131,14 @@ summary.FlexVar_JM <- function(object,...)
       r.name.e2_reg2 <- c(r.name.e2_reg2, l[-1])
     }
     rownames(e2_reg) <- r.name.e2_reg2
+    e2_reg <- rbind(e2_reg,e2_reg_other)
 
     e2_baz <- rbind(e2_surv_tab[grep("weibull.", rownames(e2_surv_tab)),],
                     e2_surv_tab[grep("sp", rownames(e2_surv_tab)),])
     colnames(e2_baz) <- c("Coeff", "SE", "Wald", "P-value")
     colnames(e2_reg) <- c("Coeff", "SE", "Wald", "P-value")
 
-    if(!is.null(e2_baz)){
+    if(nrow(e2_baz)!=0){
       cat("\n")
       cat("       Baseline:")
       print(e2_baz)

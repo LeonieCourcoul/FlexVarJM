@@ -178,6 +178,11 @@ exemple <- FlexVar_JM(formFixed = y~visit,
                       nproc = 5
                       )
 
+summary.FlexVar_JM(exemple)
+
+#Predictions for the goodness-of-fit :
+predictions_gf(exemple)
+
 
 
 

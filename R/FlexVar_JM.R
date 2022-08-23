@@ -114,6 +114,11 @@
 #'                       nproc = 5
 #'                       )
 #'
+#' summary.FlexVar_JM(exemple)
+#'
+#' #Predictions for the goodness-of-fit :
+#' predictions_gf(exemple)
+#'
 #'
 #'
 #'
@@ -657,7 +662,8 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
                                         Ind = Ind, conv = estimation2$istop, niter = estimation2$ni,
                                         convcrit = c(estimation2$ca, estimation2$cb, estimation2$rdm),
                                         names_long = colnames(X_base), names_surv = colnames(Z),
-                                        names_surv2 = colnames(Z.CR))
+                                        names_surv2 = colnames(Z_CR),
+                                        likelihood_value = estimation2$fn.value)
 
   )
   class(final_object) <- c("FlexVarJoint")

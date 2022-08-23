@@ -1,4 +1,5 @@
-
+#' @export
+#'
   quad <- function(a, b, c)
   {
     a <- as.complex(a)
