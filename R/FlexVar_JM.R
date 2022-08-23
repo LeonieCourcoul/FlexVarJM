@@ -613,7 +613,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
                             Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
                             Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
                             B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
-                            nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info,
+                            nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info, file = file,
                             blinding = TRUE, epsa = epsa, epsb = epsb, epsd = epsd)
   var_trans <- matrix(rep(0,length(binit)**2),nrow=length(binit),ncol=length(binit))
   var_trans[upper.tri(var_trans, diag=T)] <- estimation2$v
