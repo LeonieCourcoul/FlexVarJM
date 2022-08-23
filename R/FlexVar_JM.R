@@ -655,7 +655,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
                                         knots.hazard_baseline.splines = rr,
                                         knots.hazard_baseline.splines.CR = rr.CR,
                                         Ind = Ind, conv = estimation2$istop, niter = estimation2$ni,
-                                        convcrit = c(estimation2$ca, estimation2$cb, estimation3$rdm),
+                                        convcrit = c(estimation2$ca, estimation2$cb, estimation2$rdm),
                                         names_long = colnames(X_base), names_surv = colnames(Z),
                                         names_surv2 = colnames(Z.CR))
 
