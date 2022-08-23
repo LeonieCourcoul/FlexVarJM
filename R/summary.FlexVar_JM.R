@@ -1,6 +1,6 @@
 #' @export
 
-summary.FlexVar_JM <- function(object,...)
+summary.FlexVarJM <- function(object,...)
 {
   x <- object
   if(!inherits(x, "FlexVarJoint")) stop("use only \"FlexVarJoint\" objects")
