@@ -201,6 +201,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
   st.0 <- NULL
   Bs.0 <- NULL
   P.0 <- NULL
+  rr <- NULL
   #CR
   event2 <- NULL
   Z_CR <- NULL
@@ -210,6 +211,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
   st.0.CR <- NULL
   Bs.0.CR <- NULL
   gamma.CR <- NULL
+  rr.CR <- NULL
   #data management
   id <- as.integer(data.long[all.vars(formGroup)][,1])
   if(!("id" %in% colnames(data.long))) #To have a column named "id"
@@ -234,7 +236,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
   if(is.null(binit)){
     cat("Longitudinal initialisation  \n")
     list.init.long <- initial.long(formFixed, formRandom, idVar, data.long,
-                                   ncol(list.long$X))
+                                   ncol(list.long$X), nproc = nproc)
     sigma_epsilon <- list.init.long$sigma
     mu.log.sigma <- log(sigma_epsilon)
     tau.log.sigma <- precision
@@ -430,15 +432,15 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
       else{
         if(hazard_baseline_CR == "Splines"){
           Z_CR <- list.surv$Z_CR[,-1]
-          pp <- seq(0,1, length.out = ord.splines)
-          pp <- tail(head(pp,-1),-1)
-          tt2 <- as.data.frame(cbind(Time,event2))
-          tt <- tt2$Time[which(tt2$event2 == 1)]
-          kn <- quantile(tt, pp, names = FALSE)
-          kn <- kn[kn<max(Time)]
-          rr <- sort(c(rep(range(Time,0), 4L), kn))
-          B.CR <- splineDesign(rr, Time, ord = 4L)
-          Bs.CR <- splineDesign(rr, c(t(st_calc)), ord = 4L)
+          pp.CR <- seq(0,1, length.out = ord.splines)
+          pp.CR <- tail(head(pp.CR,-1),-1)
+          tt2.CR <- as.data.frame(cbind(Time,event2))
+          tt.CR <- tt2.CR$Time[which(tt2.CR$event2 == 1)]
+          kn.CR <- quantile(tt.CR, pp.CR, names = FALSE)
+          kn.CR <- kn.CR[kn.CR<max(Time)]
+          rr.CR <- sort(c(rep(range(Time,0), 4L), kn.CR))
+          B.CR <- splineDesign(rr.CR, Time, ord = 4L)
+          Bs.CR <- splineDesign(rr.CR, c(t(st_calc)), ord = 4L)
           opt_splines_CR <- optim(rep(0,ncol(B)), fn2,event = event2,W2 = B.CR,P = P,wk = wk,Time = Time,W2s = Bs.CR,id.GK = id.GK, method="BFGS", hessian = T)
           tmp_model <- coxph(formSurv_CR,
                              data = data.id,
@@ -486,22 +488,22 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
       #names_param <- c(names_param, colnames(X_base))#c(names_param, paste0("beta",ba-1))
       #cat(names_param)
     }
-    for(aa in 1:length(alpha)){
-      names_param <- c(names_param, paste0("alpha",aa-1))
+    for(aa in colnames(Z)){
+      names_param <- c(names_param, paste0("alpha.e1_",aa))
     }
     if(competing_risk){
       binit <- c(binit, alpha_CR)
-      for(aa_CR in 1:length(alpha_CR)){
-        names_param <- c(names_param, paste0("alpha.CR",aa-1))
+      for(aa_CR in colnames(Z)){
+        names_param <- c(names_param, paste0("alpha.e2_",aa_CR))
       }
 
     }
     if(variability_hetero){
       binit <- c(binit,mu.log.sigma, tau.log.sigma,alpha.sigma)
-      names_param <- c(names_param, "mu.log.sigma", "tau.log.sigma","alpha.sigma")
+      names_param <- c(names_param, "mu.log.sigma", "tau.log.sigma","alpha.sigma.e1")
       if(competing_risk){
         binit <- c(binit, alpha.sigma.CR)
-        names_param <- c(names_param, "alpha.sigma.CR")
+        names_param <- c(names_param, "alpha.sigma.e2")
       }
     }
     else{
@@ -517,19 +519,19 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
     }
     if(sharedtype %in% c("CV","CVS")){
       binit <- c(binit, alpha.current)
-      names_param <- c(names_param, "alpha.current")
+      names_param <- c(names_param, "alpha.current.e1")
     }
     if(competing_risk && sharedtype_CR %in% c("CV","CVS")){
       binit <- c(binit, alpha.current.CR)
-      names_param <- c(names_param, "alpha.current.CR")
+      names_param <- c(names_param, "alpha.current.e2")
     }
     if(sharedtype %in%  c("CVS","S")){
       binit <- c(binit, alpha.slope)
-      names_param <- c(names_param, "alpha.slope")
+      names_param <- c(names_param, "alpha.slope.e1")
     }
     if(competing_risk && sharedtype_CR %in%  c("CVS","S")){
       binit <- c(binit, alpha.slope.CR)
-      names_param <- c(names_param, "alpha.slope.CR")
+      names_param <- c(names_param, "alpha.slope.e2")
     }
     #if(hazard_baseline == "Exponential"){
     #  binit <- c(binit,lambda0)
@@ -537,12 +539,12 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
     if(hazard_baseline == "Weibull"){
       #binit <- c(binit,lambda0,shape)
       binit <- c(binit,shape_racine)
-      names_param <- c(names_param, "Weibull.shape.racine")
+      names_param <- c(names_param, "Weibull.shape.racine.e1")
     }
     if(hazard_baseline == "Splines"){
       binit <- c(binit,opt_splines$par)
       for(sp in 1:length(opt_splines$par)){
-        names_param <- c(names_param, paste0("sp",sp-1))
+        names_param <- c(names_param, paste0("sp.e1",sp-1))
       }
 
     }
@@ -552,12 +554,12 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
     if(competing_risk && (hazard_baseline_CR == "Weibull")){
       #binit <- c(binit,lambda0_CR,shape_CR)
       binit <- c(binit,shape_CR_racine)
-      names_param <- c(names_param, "Weibull.shape.racine.CR")
+      names_param <- c(names_param, "Weibull.shape.racine.e2")
     }
     if(competing_risk && hazard_baseline_CR == "Splines"){
       binit <- c(binit,opt_splines_CR$par)
       for(sp_CR in 1:length(opt_splines_CR$par)){
-        names_param <- c(names_param, paste0("sp.CR",sp_CR-1))
+        names_param <- c(names_param, paste0("sp.e2",sp_CR-1))
       }
     }
     nb.priorMean.beta = length(priorMean.beta)
@@ -649,7 +651,14 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
                                         maxiter = maxiter, print.info = print.info,
                                         file = file, epsa = epsa, epsb = epsb, epsd = epsd,
                                         nb.priorMean.beta = nb.priorMean.beta, nb.alpha = nb.alpha,
-                                        nb.alpha.CR = nb.alpha.CR)
+                                        nb.alpha.CR = nb.alpha.CR,
+                                        knots.hazard_baseline.splines = rr,
+                                        knots.hazard_baseline.splines.CR = rr.CR,
+                                        Ind = Ind, conv = estimation2$istop, niter = estimation2$ni,
+                                        convcrit = c(estimation2$ca, estimation2$cb, estimation3$rdm),
+                                        names_long = colnames(X_base), names_surv = colnames(Z),
+                                        names_surv2 = colnames(Z.CR))
+
   )
   class(final_object) <- c("FlexVarJoint")
   return(final_object)

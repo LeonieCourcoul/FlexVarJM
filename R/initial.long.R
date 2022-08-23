@@ -16,12 +16,13 @@
 #' @export
 #'
 #' @examples
-initial.long <- function(formFixed, formRandom, idVar, data.long1, ncX){
+initial.long <- function(formFixed, formRandom, idVar, data.long1, ncX, nproc = nproc){
 
   long_model <- hlme(fixed = formFixed,
                      random= formRandom,
                      subject = idVar,
-                     data=data.long1)
+                     data=data.long1,
+                     nproc = nproc)
   priorMean.beta <- long_model$best[1:ncX]
   #priorTau.beta <- diag(rep(precision,length(priorMean.beta)))
   sigma <- long_model$best["stderr"]

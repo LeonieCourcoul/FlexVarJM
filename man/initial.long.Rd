@@ -4,7 +4,7 @@
 \alias{initial.long}
 \title{Initialisation of Longitudinal Submodel}
 \usage{
-initial.long(formFixed, formRandom, idVar, data.long1, ncX)
+initial.long(formFixed, formRandom, idVar, data.long1, ncX, nproc = nproc)
 }
 \arguments{
 \item{formFixed}{A formula which indicates the fixed effects for the longitudinal submodel}
