@@ -49,11 +49,14 @@
 #'
 
 
-predict_ea <- function(param, nb.e.a = 0, X_base_i = NULL, beta = NULL, U_i = NULL, y_i = NULL,
+predict_re <- function(param, nb.e.a = 0, X_base_i = NULL, beta = NULL, U_i = NULL, y_i = NULL,
                        Sigma.b = NULL, mu.log.sigma = NULL, tau.log.sigma = NULL,variability_hetero = TRUE,
                        alpha.sigma = NULL, competing_risk = FALSE, alpha.sigma.CR = NULL,sharedtype = NULL, sharedtype_CR = NULL,
                        Xtime_i = NULL, Utime_i = NULL, Xs_i = NULL, Us_i = NULL,
-                       alpha.current = NULL, alpha.current.CR = NULL,hazard_baseline = NULL,wk = NULL,
+                       alpha.current = NULL, alpha.current.CR = NULL,
+                       Xslope_i = NULL, Uslope_i = NULL, Xs.slope_i = NULL, Us.slope_i = NULL,
+                       alpha.slope = NULL, alpha.slope.CR = NULL, indices_beta_slope = NULL,
+                       hazard_baseline = NULL,wk = NULL,
                        shape = 0,Time_i = NULL,st_i = NULL,gamma = NULL, B_i = NULL, Bs_i = NULL,
                        Z_i = NULL, alpha = NULL, P_i = NULL, hazard_baseline_CR = NULL, shape.CR = NULL,
                        gamma.CR = NULL, B.CR_i = NULL, Bs.CR_i = NULL,Z.CR_i = NULL,alpha.CR = NULL,event1_i = NULL, event2_i = NULL
@@ -102,6 +105,7 @@ predict_ea <- function(param, nb.e.a = 0, X_base_i = NULL, beta = NULL, U_i = NU
       etaBaseline_CR <- etaBaseline_CR + alpha.sigma.CR*sigma_ea
     }
   }
+  #current value
   if(sharedtype %in% c("CV","CVS") || (competing_risk && sharedtype_CR %in% c("CV","CVS")) ){
     CV <- (beta%*%Xtime_i)[1,1]+b_ea%*%Utime_i
     current.GK <- beta%*%t(Xs_i) + b_ea%*%t(Us_i)
@@ -112,6 +116,24 @@ predict_ea <- function(param, nb.e.a = 0, X_base_i = NULL, beta = NULL, U_i = NU
     if(competing_risk && sharedtype_CR %in% c("CV","CVS")){
       h_CR <- h_CR*exp(alpha.current.CR*CV)
       survLong_CR <- survLong_CR + alpha.current.CR*current.GK
+    }
+  }
+  #slope
+  if(sharedtype %in% c("CVS","S") || (competing_risk && sharedtype_CR %in% c("CVS","S")) ){
+    slope.GK <- beta[indices_beta_slope]%*%t(Xs.slope_i) + b_ea[,-1]%*%t(Us.slope_i)
+    if(length(indices_beta_slope) == 1){
+      slope <- (beta[indices_beta_slope]%*%Xslope_i)[1,1]+b_ea[,-1]*Uslope_i
+    }
+    else{
+      slope <- (beta[indices_beta_slope]%*%Xslope_i)[1,1]+b_ea[,-1]%*%Uslope_i
+    }
+    if(sharedtype %in% c("CVS","S")){
+      h <- h*exp(alpha.slope*slope)
+      survLong <- survLong + alpha.slope*slope.GK
+    }
+    if(competing_risk && sharedtype_CR %in% c("CVS","S")){
+      h_CR <- h_CR*exp(alpha.slope.CR*slope)
+      survLong_CR <- survLong_CR + alpha.slope.CR*slope.GK
     }
   }
 
@@ -148,7 +170,7 @@ predict_ea <- function(param, nb.e.a = 0, X_base_i = NULL, beta = NULL, U_i = NU
 
   survLong <- survLong%*%h_0.GK
 
-  Surv <- exp((-exp(etaBaseline)*P_i*survLong))
+  Surv <- (-exp(etaBaseline)*P_i*survLong)
 
 
   if(competing_risk){
@@ -183,13 +205,15 @@ predict_ea <- function(param, nb.e.a = 0, X_base_i = NULL, beta = NULL, U_i = NU
     ###GK integration
     survLong_CR <- exp(survLong_CR)
     survLong_CR <- survLong_CR%*%h_0.GK.CR
-    Surv.CR <- exp((-exp(etaBaseline_CR)*P_i*survLong_CR))
+    Surv.CR <- (-exp(etaBaseline_CR)*P_i*survLong_CR)
   }
   if(competing_risk){
-    fct <- f_Y_b_sigma*f_sigma*f_b*(h**event1_i)*Surv*(h_CR**event2_i)*Surv.CR #f_sigma*
+    fct <- log(f_Y_b_sigma*f_sigma*f_b) + log(h**event1_i) + Surv +log(h_CR**event2_i) + Surv.CR #f_sigma*
   }
   else{
-    fct <- f_Y_b_sigma*f_b*f_sigma*(h**event1_i)*Surv
+    fct <- log(f_Y_b_sigma*f_b*f_sigma)+log(h**event1_i)+Surv
   }
+  #print(fct)
   fct
+
 }

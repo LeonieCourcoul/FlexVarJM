@@ -18,7 +18,7 @@ log_llh(
   sharedtype_CR,
   hazard_baseline,
   hazard_baseline_CR,
-  ord.splines,
+  nb.knots.splines,
   Xtime,
   Utime,
   nb_pointsGK,
@@ -84,7 +84,7 @@ log_llh(
 
 \item{hazard_baseline_CR}{char : baseline hazard function, competing risk : "Exponential" or "Weibull" or "Splines"}
 
-\item{ord.splines}{integer : the order of splines function for baseline hazard function}
+\item{nb.knots.splines}{integer : the order of splines function for baseline hazard function}
 
 \item{Xtime}{matrix : fixed effects at event time}
 

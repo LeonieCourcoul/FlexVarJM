@@ -22,7 +22,8 @@ initial.long <- function(formFixed, formRandom, idVar, data.long1, ncX, nproc = 
                      random= formRandom,
                      subject = idVar,
                      data=data.long1,
-                     nproc = nproc)
+                     nproc = nproc,
+                     verbose = FALSE)
   priorMean.beta <- long_model$best[1:ncX]
   #priorTau.beta <- diag(rep(precision,length(priorMean.beta)))
   sigma <- long_model$best["stderr"]

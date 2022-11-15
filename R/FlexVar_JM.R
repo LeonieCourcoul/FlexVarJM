@@ -47,7 +47,6 @@
 #' @param formGroup A formula which indicates the group variable
 #' @param formSurv A formula which indicates the variables used in the survival submodel
 #' @param timeVar The name of the column of time in data.long. This variable must appears in data.long
-#' @param nb.e.a The number of random effects (number of b_i + 1 if variability_hetero = T)
 #' @param data.long A dataframe with the longitudinal data
 #' @param variability_hetero A logical to indicate if we suppose a subject_specific variability
 #' @param sharedtype char : dependence structure for survival model : "RE" (random effects) or "CV" (current value) or "CVS" (current value and slope) or "S" (slope)
@@ -56,7 +55,7 @@
 #' @param formSlopeRandom A formula for the random effects of the slope of the longitudinal submodel : the derivative of the formRandom
 #' @param indices_beta_slope A vector of index indicating which beta of the formFixed formula is used in the formSlopeFixed formula
 #' @param nb_pointsGK the number of points for Gauss-Kronrod approximation : choice between 7 and 15. 15 by default.
-#' @param ord.splines A numeric, the order of splines for the baseline risk function
+#' @param nb.knots.splines  A numeric, the order of splines for the baseline risk function
 #' @param competing_risk A logical indicating if the model handles with competing risks
 #' @param formSurv_CR In case of competing risk A formula which indicates the variables used in the survival submodel for the second event
 #' @param hazard_baseline_CR In case of competing risk : a character for the baseline hazard function of the second event
@@ -100,7 +99,6 @@
 #'                       formGroup = ~ID,
 #'                       formSurv = Surv(time, event ==1 ) ~ 1,
 #'                       timeVar = "visit",
-#'                       nb.e.a = 2,
 #'                       data.long = Data_toy,
 #'                       variability_hetero = TRUE,
 #'                       sharedtype = "CV",
@@ -114,20 +112,27 @@
 #'                       nproc = 5
 #'                       )
 #'
-#' summary.FlexVar_JM(exemple)
+#' summary(exemple)
 #'
 #' #Predictions for the goodness-of-fit :
-#' predictions_gf(exemple)
+#' goodness <- goodness_of_fit(exemple, graph = T)
 #'
+#' #Predictions for a (new) individual to have event 1 between time
+#' s = 3 and time S+t = 4 years given that he did not experience any event
+#' before time s, its trajectory of marker until time s ans the set
+#' of estimated parameters :
+#'
+#' newdata <- Data_toy[which(Data_toy$ID == 1 & Data_toy$visit <= 3),]
+#' predictions <- predyn(newdata, exemple, s = 3, t = 1, event = 1, L = 500, graph = TRUE)
 #'
 #'
 #'
 #' }
 #'
-FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e.a, data.long,
+FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                        variability_hetero = TRUE, sharedtype = "CV", hazard_baseline = "Exponential",
                        formSlopeFixed = NULL, formSlopeRandom = NULL, indices_beta_slope = NULL,
-                       nb_pointsGK = 15, ord.splines = 3, competing_risk = FALSE, formSurv_CR = NULL,
+                       nb_pointsGK = 15, nb.knots.splines = 3, competing_risk = FALSE, formSurv_CR = NULL,
                        hazard_baseline_CR = "Exponential", sharedtype_CR = "CV", left_trunc = FALSE,
                        Time.0 = NULL, S1 = 1000, S2= 5000, nproc = 1, clustertype = "SOCK", maxiter = 100,
                        print.info = FALSE, file = NULL, epsa = 1e-03, epsb = 1e-03, epsd = 1e-03, binit = NULL
@@ -162,9 +167,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
   if(length(hazard_baseline) != 1 || !(hazard_baseline %in% c("Weibull", "Splines","Exponential"))) stop("The value of argument 'hazard_baseline' must be of lenght 1 and must be 'Exponential' or 'Weibull' or 'Splines'")
   if(class(S1)!="numeric") stop("The argument S1 must be a numeric")
   if(class(S2)!="numeric") stop("The argument S2 must be a numeric")
-  if(missing(nb.e.a)) stop("The argument nb.e.a must be specified : it is the number of random effects + 1 when variability_hetero is TRUE")
-  if(class(nb.e.a)!="numeric") stop("The argument nb.e.a must be a numeric : it is the number of random effects + 1 when variability_hetero is TRUE")
-  if(hazard_baseline == "Splines" && class(ord.splines) != "numeric") stop("The argument ord.splines must be a numeric : the order of splines for the baseline hazard function")
+  if(hazard_baseline == "Splines" && class(nb.knots.splines) != "numeric") stop("The argument nb.knots.splines must be a numeric : the order of splines for the baseline hazard function")
   if(class(left_trunc) != "logical") stop("The argument left_trunc (to take into account left truncation/delay entry) must be a logical")
   if(class(competing_risk) != "logical") stop("The argument competing_risk (to take into account two competing events) must be a logical")
   if(competing_risk && missing(formSurv_CR)) stop("The argument formSurv_CR must be specified when the argument competing_risk is TRUE")
@@ -231,6 +234,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
   list.long <- data.manag.long(formGroup,formFixed, formRandom,data.long)
   X_base <- list.long$X
   U <- list.long$U
+  nb.e.a <- ncol(U)
   y.new.prog <- list.long$y.new.prog
   data.long <- cbind(data.long,y.new.prog)
   data.long <- data.long %>% group_by(id) %>% dplyr::mutate(sd.emp = sd(y.new.prog),
@@ -250,7 +254,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
   }
 
   ## survival part
-  cat("Survival management  \n")
+  cat("Survival management and initialisation \n")
   list.surv <- data.manag.surv(formGroup, formSurv, data.long, formSurv_CompRisk = formSurv_CR)
   event1 <- list.surv$event1
   event2 <- list.surv$event2
@@ -332,15 +336,15 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
     else{
       if(hazard_baseline == "Splines"){
         Z <- list.surv$Z[,-1]
-        pp <- seq(0,1, length.out = ord.splines)
+        pp <- seq(0,1, length.out = nb.knots.splines + 2)
         pp <- tail(head(pp,-1),-1)
         tt1 <- as.data.frame(cbind(Time,event1))
         tt <- tt1$Time[which(tt1$event1 == 1)]
         kn <- quantile(tt, pp, names = FALSE)
         kn <- kn[kn<max(Time)]
-        rr <- sort(c(rep(range(Time,0), 4L), kn))
-        B <- splineDesign(rr, Time, ord = 4L)
-        Bs <- splineDesign(rr, c(t(st_calc)), ord = 4L)
+        rr <- sort(c(rep(range(Time,st_calc), 4L), kn))
+        B <- splines::splineDesign(rr, Time, ord = 4L)
+        Bs <- splines::splineDesign(rr, c(t(st_calc)), ord = 4L)
         opt_splines <- optim(rep(0,ncol(B)), fn2,event = event1,W2 = B,P = P,wk = wk,
                              Time = Time,W2s = Bs,id.GK = id.GK, method="BFGS", hessian = T)
         tmp_model <- coxph(formSurv_dep,
@@ -353,7 +357,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
           alpha <- tmp_model$coefficients[1:ncol(Z)]
         }
         if(left_trunc){
-          Bs.0 <- splineDesign(rr, c(t(st.0)), ord = 4L)
+          Bs.0 <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
         }
       }
       else{
@@ -437,15 +441,15 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
       else{
         if(hazard_baseline_CR == "Splines"){
           Z_CR <- list.surv$Z_CR[,-1]
-          pp.CR <- seq(0,1, length.out = ord.splines)
+          pp.CR <- seq(0,1, length.out = nb.knots.splines + 2)
           pp.CR <- tail(head(pp.CR,-1),-1)
           tt2.CR <- as.data.frame(cbind(Time,event2))
           tt.CR <- tt2.CR$Time[which(tt2.CR$event2 == 1)]
           kn.CR <- quantile(tt.CR, pp.CR, names = FALSE)
           kn.CR <- kn.CR[kn.CR<max(Time)]
           rr.CR <- sort(c(rep(range(Time,0), 4L), kn.CR))
-          B.CR <- splineDesign(rr.CR, Time, ord = 4L)
-          Bs.CR <- splineDesign(rr.CR, c(t(st_calc)), ord = 4L)
+          B.CR <- splines::splineDesign(rr.CR, Time, ord = 4L)
+          Bs.CR <- splines::splineDesign(rr.CR, c(t(st_calc)), ord = 4L)
           opt_splines_CR <- optim(rep(0,ncol(B)), fn2,event = event2,W2 = B.CR,P = P,wk = wk,Time = Time,W2s = Bs.CR,id.GK = id.GK, method="BFGS", hessian = T)
           tmp_model <- coxph(formSurv_CR,
                              data = data.id,
@@ -457,7 +461,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
             alpha_CR <- tmp_model$coefficients[1:ncol(Z_CR)]
           }
           if(left_trunc){
-            Bs.0.CR <- splineDesign(rr, c(t(st.0)), ord = 4L)
+            Bs.0.CR <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
           }
         }
         else{
@@ -488,18 +492,18 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
     index <- 0
     for(ba in colnames(Xtime)){#1:length(priorMean.beta)){
 
-      names_param <-  c(names_param, paste0("beta",index,"_",ba))
+      names_param <-  c(names_param, paste0("beta",index,"#§#_",ba))
       index <- index + 1
       #names_param <- c(names_param, colnames(X_base))#c(names_param, paste0("beta",ba-1))
       #cat(names_param)
     }
     for(aa in colnames(Z)){
-      names_param <- c(names_param, paste0("alpha.e1_",aa))
+      names_param <- c(names_param, paste0("alpha.e1#§#_",aa))
     }
     if(competing_risk){
       binit <- c(binit, alpha_CR)
       for(aa_CR in colnames(Z)){
-        names_param <- c(names_param, paste0("alpha.e2_",aa_CR))
+        names_param <- c(names_param, paste0("alpha.e2#§#_",aa_CR))
       }
 
     }
@@ -582,7 +586,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
                            competing_risk = competing_risk,
                            nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S1,Zq = Zq, sharedtype = sharedtype,
                            sharedtype_CR = sharedtype_CR,
-                           hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                           hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, nb.knots.splines  = nb.knots.splines , Xtime = Xtime,
                            Utime = Utime, nb_pointsGK = nb_pointsGK,
                            Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
                            indices_beta_slope = indices_beta_slope, Time =Time,
@@ -605,7 +609,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
                             competing_risk = competing_risk,
                             nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
                             sharedtype_CR = sharedtype_CR,
-                            hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                            hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, nb.knots.splines = nb.knots.splines, Xtime = Xtime,
                             Utime = Utime, nb_pointsGK = nb_pointsGK,
                             Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
                             indices_beta_slope = indices_beta_slope, Time =Time,
@@ -645,7 +649,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
                                         nb_pointsGK = nb_pointsGK,
                                         hazard_baseline = hazard_baseline,
                                         S1 = S1, S2 = S2, nb.e.a = nb.e.a,
-                                        ord.splines = ord.splines,
+                                        nb.knots.splines = nb.knots.splines,
                                         left_trunc = left_trunc,
                                         competing_risk = competing_risk,
                                         formSurv_CR = formSurv_CR,
@@ -666,7 +670,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, nb.e
                                         likelihood_value = estimation2$fn.value)
 
   )
-  class(final_object) <- c("FlexVarJoint")
+  class(final_object) <- c("FlexVarJM")
   return(final_object)
 
 }

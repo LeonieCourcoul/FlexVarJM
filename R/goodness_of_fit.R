@@ -7,8 +7,8 @@
 #'
 #' @examples
 #'
-prediction_gf <- function(FlexVarJM){
-  print("Computation of prediction")
+goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
+  cat("Computation of prediction \n")
   time.prog1 <- Sys.time()
 
   Xtime <- NULL
@@ -42,8 +42,10 @@ prediction_gf <- function(FlexVarJM){
   Bs.0.CR <- NULL
   gamma.CR <- NULL
   #data management
-  id <- as.integer(FlexVarJM$control$data.long[all.vars(FlexVarJM$control$formGroup)][,1])
+
   data.long <- FlexVarJM$control$data.long
+  id <- as.integer(data.long[all.vars(FlexVarJM$control$formGroup)][,1])
+  #print(id)
   if(!("id" %in% colnames(FlexVarJM$control$data.long))) #To have a column named "id"
     data.long <- cbind(FlexVarJM$control$data.long, id = id)
   idVar = "id"
@@ -225,7 +227,7 @@ prediction_gf <- function(FlexVarJM){
     }
   }
 
-  print("Prediction")
+  #cat("Prediction \n")
   shape <- 0
   shape.CR <- 0
   estim_param <- FlexVarJM$table.res$Estimation
@@ -333,9 +335,10 @@ prediction_gf <- function(FlexVarJM){
   st_calc.sort.unique <- data.GaussKronrod.sort.unique$st
   P.sort.unique <- data.GaussKronrod.sort.unique$P
   for(i in 1:Ind){
+    #print(i)
     Cum_risk_2i <- c()
     Cum_risk_1i <- c()
-    print(i)
+    #print(i)
     X_base_i <- X_base[offset[i]:(offset[i+1]-1),]
     U_i <- U[offset[i]:(offset[i+1]-1),]
     y_i <- y.new.prog[offset[i]:(offset[i+1]-1)]
@@ -366,17 +369,20 @@ prediction_gf <- function(FlexVarJM){
     bi <- Sigma.b%*%t(U_i)%*%solve(U_i%*%Sigma.b%*%t(U_i) + diag(rep(exp(sigma_i),nrow(U_i)), nrow = nrow(U_i), ncol = nrow(U_i)))%*%(y_i - X_base_i%*%beta)
 
     ### Longitudinal prediction
-    print("Longitudinal part")
+    #print("Longitudinal part")
     binit <- c(bi,sigma_i)
 
-    pred.e.a <- marqLevAlg(binit, fn = predict_ea, minimize = FALSE,
+    pred.e.a <- marqLevAlg(binit, fn = predict_re, minimize = FALSE,
                            nb.e.a = FlexVarJM$control$nb.e.a, X_base_i = X_base_i, beta = beta, U_i =U_i, y_i=y_i,
                            Sigma.b = Sigma.b, mu.log.sigma = mu.log.sigma, tau.log.sigma = tau.log.sigma,
                            variability_hetero = FlexVarJM$control$variability_hetero,
                            alpha.sigma = alpha.sigma, competing_risk = FlexVarJM$control$competing_risk, alpha.sigma.CR = alpha.sigma.CR,
                            sharedtype = FlexVarJM$control$sharedtype, sharedtype_CR = FlexVarJM$control$sharedtype_CR,
                            Xtime_i = Xtime_i, Utime_i = Utime_i, Xs_i = Xs_i, Us_i = Us_i,
-                           alpha.current = alpha.current, alpha.current.CR = alpha.current.CR,  hazard_baseline = FlexVarJM$control$hazard_baseline,  wk = wk, shape = shape,
+                           alpha.current = alpha.current, alpha.current.CR = alpha.current.CR,
+                           Xslope_i = Xslope_i, Uslope_i = Uslope_i, Xs.slope_i = Xs.slope_i, Us.slope_i = Us.slope_i,
+                           alpha.slope = alpha.slope, alpha.slope.CR = alpha.slope.CR, indices_beta_slope = FlexVarJM$control$indices_beta_slope,
+                           hazard_baseline = FlexVarJM$control$hazard_baseline,  wk = wk, shape = shape,
                            Time_i = Time_i,  st_i = st_i,gamma = gamma, B_i = B_i, Bs_i = Bs_i, Z_i = Z_i, alpha = alpha, P_i = P_i,
                            hazard_baseline_CR = FlexVarJM$control$hazard_baseline_CR, shape.CR = shape.CR, gamma.CR = gamma.CR, B.CR_i = B.CR_i, Bs.CR_i = Bs.CR_i,
                            Z.CR_i = Z.CR_i,alpha.CR = alpha.CR,event1_i = event1_i, event2_i=event2_i,
@@ -387,13 +393,13 @@ prediction_gf <- function(FlexVarJM){
 
 
 
-
-    pred.e.a.table <- rbind(pred.e.a.table,c(data.long$ID[i], pred.e.a$b))
+    #print(pred.e.a$b)
+    pred.e.a.table <- rbind(pred.e.a.table,c(data.id$ID[i], pred.e.a$b))
     CV <- X_base_i%*%beta + U_i%*%pred.e.a$b[1:(FlexVarJM$control$nb.e.a)]
     pred.CV <- rbind(pred.CV,cbind(rep(data.id$ID[i],length(CV)), CV))
 
     ### Survival goodness-of-fit
-    print("Survival part")
+    #print("Survival part")
 
     for(j in 1:nrow(st_calc.sort.unique)){
 
@@ -406,8 +412,8 @@ prediction_gf <- function(FlexVarJM){
 
       if(FlexVarJM$control$sharedtype %in% c("CV","CVS") || (FlexVarJM$control$competing_risk && FlexVarJM$control$sharedtype_CR %in% c("CV","CVS")) ){
 
-        list.data.GK.current.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[data.GaussKronrod.sort.unique$data.id2$ID==i,], st_calc.sort.unique[j,],
-                                                      formFixed, formRandom,timeVar)
+        list.data.GK.current.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[(FlexVarJM$control$nb_pointsGK*(i-1)+1):(FlexVarJM$control$nb_pointsGK*i),], st_calc.sort.unique[j,],
+                                                      FlexVarJM$control$formFixed, FlexVarJM$control$formRandom,FlexVarJM$control$timeVar)
 
         Xs.j <- list.data.GK.current.sort.unique$Xtime
         Us.j <- list.data.GK.current.sort.unique$Utime
@@ -420,13 +426,13 @@ prediction_gf <- function(FlexVarJM){
       }
 
       if(FlexVarJM$control$sharedtype %in% c("CVS","S") || (FlexVarJM$control$competing_risk && FlexVarJM$control$sharedtype_CR %in% c("CVS","S") )){
-        list.data.GK.slope.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[data.GaussKronrod.sort.unique$data.id2$ID==i,], st_calc.sort.unique[j,],
-                                        formSlopeFixed, formSlopeRandom,timeVar)
+        list.data.GK.slope.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[(FlexVarJM$control$nb_pointsGK*(i-1)+1):(FlexVarJM$control$nb_pointsGK*i),], st_calc.sort.unique[j,],
+                                                    FlexVarJM$control$formSlopeFixed, FlexVarJM$control$formSlopeRandom,FlexVarJM$control$timeVar)
 
         Xs.slope.j <- list.data.GK.slope.sort.unique$Xtime
         Us.slope.j <- list.data.GK.slope.sort.unique$Utime
 
-        slope.GK <- betaa[indices_beta_slope]%*%t(Xs.slope.j) + + pred.e.a$b[2:(FlexVarJM$control$nb.e.a)]%*%t(Us.slope.j)
+        slope.GK <- beta[indices_beta_slope]%*%t(Xs.slope.j) +  pred.e.a$b[2:(FlexVarJM$control$nb.e.a)]%*%t(Us.slope.j)
 
         if(FlexVarJM$control$sharedtype %in% c("CVS","S")){
           pred_haz <- pred_haz +  alpha.slope*slope.GK
@@ -515,4 +521,15 @@ prediction_gf <- function(FlexVarJM){
   }
   result <- list(pred.e.a.table = pred.e.a.table,
                  pred.CV = pred.CV, Cum_risk1 = Cum_risk1, Cum_risk2 = Cum_risk2)
+  graphs <- NULL
+  if(graph){
+    timeInterv <- range(data.long[,FlexVarJM$control$timeVar])
+    if(is.null(break.times)) break.times <- quantile(timeInterv,prob=seq(0,1,length.out=10))
+    graphs <- plot.goodnessoffit(data.long,data.id,pred.CV,break.times, formFixed = FlexVarJM$control$formFixed, formSurv = FlexVarJM$control$formSurv,
+                                 timeVar = FlexVarJM$control$timeVar,Cum_risk1, competing_risk = FlexVarJM$control$competing_risk, formSurv_CR = FlexVarJM$control$formSurv_CR, Cum_risk2)
+  }
+
+  result.final <- list(tables = result,
+                       graphs = graphs)
+  result.final
 }

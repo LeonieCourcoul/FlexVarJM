@@ -3,7 +3,7 @@
 summary.FlexVarJM <- function(object,...)
 {
   x <- object
-  if(!inherits(x, "FlexVarJoint")) stop("use only \"FlexVarJoint\" objects")
+  if(!inherits(x, "FlexVarJM")) stop("use only \"FlexVarJM\" objects")
 
   cat("Joint model for quantitative outcome and competing risks", "\n")
   cat("with heterogenous variability and fitted by maximum likelihood method", "\n")
@@ -55,11 +55,13 @@ summary.FlexVarJM <- function(object,...)
   cat("      Fixed effects:")
 
   betas_tab <- x$table.res[grep("^beta", rownames(x$table.res)),]
-  r.name.betas <- strsplit(rownames(betas_tab), "_")
+  #print(rownames(betas_tab))
+  r.name.betas <- strsplit(rownames(betas_tab), "#§#_")
   r.name.betas2 <- c()
   for(l in r.name.betas){
     r.name.betas2 <- c(r.name.betas2, l[-1])
   }
+  print(r.name.betas2)
   rownames(betas_tab) <- r.name.betas2
   betas_tab$Wald <- betas_tab$Estimation/betas_tab$SE
   betas_tab$pvalue <- 1 - pchisq(betas_tab$Wald**2,1)
@@ -89,7 +91,7 @@ summary.FlexVarJM <- function(object,...)
   e1_reg_other <- rbind(e1_surv_tab[grep("alpha.sigma", rownames(e1_surv_tab)),],
                         e1_surv_tab[grep("alpha.current", rownames(e1_surv_tab)),],
                         e1_surv_tab[grep("alpha.slope", rownames(e1_surv_tab)),])
-  r.name.e1_reg <- strsplit(rownames(e1_reg), "_")
+  r.name.e1_reg <- strsplit(rownames(e1_reg), "#§#_")
   r.name.e1_reg2 <- c()
   for(l in r.name.e1_reg){
     r.name.e1_reg2 <- c(r.name.e1_reg2, l[-1])

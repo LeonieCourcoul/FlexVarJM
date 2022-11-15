@@ -19,9 +19,14 @@ Imports:
   marqLevAlg,
   splines,
   stats,
-  utils
+  utils,
+  snow,
+  ggplot2,
+  survminer
 Depends: 
-    R (>= 2.10)
+    R (>= 2.10),
+    survival,
+    foreach
 URL: https://github.com/LeonieCourcoul/FlexVarJM
 BugReports: https://github.com/LeonieCourcoul/FlexVarJM/issues
 LazyData: true

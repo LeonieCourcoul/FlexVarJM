@@ -10,7 +10,6 @@ FlexVar_JM(
   formGroup,
   formSurv,
   timeVar,
-  nb.e.a,
   data.long,
   variability_hetero = TRUE,
   sharedtype = "CV",
@@ -19,7 +18,7 @@ FlexVar_JM(
   formSlopeRandom = NULL,
   indices_beta_slope = NULL,
   nb_pointsGK = 15,
-  ord.splines = 3,
+  nb.knots.splines = 3,
   competing_risk = FALSE,
   formSurv_CR = NULL,
   hazard_baseline_CR = "Exponential",
@@ -50,8 +49,6 @@ FlexVar_JM(
 
 \item{timeVar}{The name of the column of time in data.long. This variable must appears in data.long}
 
-\item{nb.e.a}{The number of random effects (number of b_i + 1 if variability_hetero = T)}
-
 \item{data.long}{A dataframe with the longitudinal data}
 
 \item{variability_hetero}{A logical to indicate if we suppose a subject_specific variability}
@@ -68,7 +65,7 @@ FlexVar_JM(
 
 \item{nb_pointsGK}{the number of points for Gauss-Kronrod approximation : choice between 7 and 15. 15 by default.}
 
-\item{ord.splines}{A numeric, the order of splines for the baseline risk function}
+\item{nb.knots.splines}{A numeric, the order of splines for the baseline risk function}
 
 \item{competing_risk}{A logical indicating if the model handles with competing risks}
 
@@ -164,7 +161,6 @@ exemple <- FlexVar_JM(formFixed = y~visit,
                       formGroup = ~ID,
                       formSurv = Surv(time, event ==1 ) ~ 1,
                       timeVar = "visit",
-                      nb.e.a = 2,
                       data.long = Data_toy,
                       variability_hetero = TRUE,
                       sharedtype = "CV",
@@ -178,11 +174,18 @@ exemple <- FlexVar_JM(formFixed = y~visit,
                       nproc = 5
                       )
 
-summary.FlexVar_JM(exemple)
+summary(exemple)
 
 #Predictions for the goodness-of-fit :
-predictions_gf(exemple)
+goodness <- goodness_of_fit(exemple, graph = T)
 
+#Predictions for a (new) individual to have event 1 between time
+s = 3 and time S+t = 4 years given that he did not experience any event
+before time s, its trajectory of marker until time s ans the set
+of estimated parameters :
+
+newdata <- Data_toy[which(Data_toy$ID == 1 & Data_toy$visit <= 3),]
+predictions <- predyn(newdata, exemple, s = 3, t = 1, event = 1, L = 500, graph = TRUE)
 
 
 

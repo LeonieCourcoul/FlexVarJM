@@ -13,7 +13,7 @@
 #' @param sharedtype_CR vector : dependence structure for competing risk survival model : "RE" (random effects) or "CV" (current value) or "CVS" (current value and slope) or "S" (slope)
 #' @param hazard_baseline char : baseline hazard function : "Exponential" or "Weibull" or "Splines"
 #' @param hazard_baseline_CR char : baseline hazard function, competing risk : "Exponential" or "Weibull" or "Splines"
-#' @param ord.splines integer : the order of splines function for baseline hazard function
+#' @param nb.knots.splines integer : the order of splines function for baseline hazard function
 #' @param Xtime matrix : fixed effects at event time
 #' @param Utime matrix : RE at event time
 #' @param nb_pointsGK integer : number of points for Gauss-Kronrod approximation, 7 or 15 (default)
@@ -57,7 +57,7 @@
 #' @examples
 log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
                     nb.alpha.CR, variability_hetero, S,Zq, sharedtype, sharedtype_CR,
-                    hazard_baseline, hazard_baseline_CR, ord.splines, Xtime, Utime, nb_pointsGK,
+                    hazard_baseline, hazard_baseline_CR, nb.knots.splines, Xtime, Utime, nb_pointsGK,
                     Xs,Us, Xslope, Uslope, Xs.slope, Us.slope, indices_beta_slope, Time,
                     st_calc, B, Bs, wk, Z, P, left_trunc, Z_CR, X_base, offset, U, y.new.prog, event1, event2, Ind,
                     Xs.0, Us.0, Xs.slope.0, Us.slope.0, P.0, st.0,Bs.0,B.CR, Bs.CR, Bs.0.CR
@@ -137,8 +137,8 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     curseur <- curseur +1
   }
   if(hazard_baseline == "Splines"){
-    gamma <- param[(curseur+1):(curseur+ord.splines+2)]
-    curseur <- curseur + ord.splines + 2
+    gamma <- param[(curseur+1):(curseur+nb.knots.splines+2+2)]
+    curseur <- curseur + nb.knots.splines + 2+2
   }
   # if(competing_risk && hazard_baseline_CR == "exponential"){
   #   lambda0.CR <- alpha.CR[1]
@@ -150,8 +150,8 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     curseur <- curseur +1
   }
   if(competing_risk && hazard_baseline_CR == "Splines"){
-    gamma.CR <- param[(curseur+1):(curseur+ord.splines+2)]
-    curseur <- curseur + ord.splines + 2
+    gamma.CR <- param[(curseur+1):(curseur+nb.knots.splines+2+2)]
+    curseur <- curseur + nb.knots.splines + 2+2
   }
 
   #Manage random effects
@@ -294,6 +294,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     ###GK integration
     survLong <- exp(survLong)
     survLong <- survLong%*%h_0.GK
+
 
     P_i <- P[i]
     Surv <- (-exp(etaBaseline)*P_i*survLong)
