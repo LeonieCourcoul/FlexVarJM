@@ -18,12 +18,12 @@
 #'
 #' @examples
 data.GaussKronrod2 <- function(data.id, a, b, k = 15){
-
+  #print("new")
   wk <- gaussKronrod()$wk
   sk <- gaussKronrod()$sk
   K <- length(sk)
   P <- (b-a)/2
-  st <- outer(P, sk + 1)+a
+  st <- outer(P, sk)+P+a
   id.GK <- rep(seq_along(data.id$id), each = K)
   data.id2 <- data.id[id.GK, ]
 

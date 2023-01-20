@@ -20,9 +20,7 @@ Imports:
   splines,
   stats,
   utils,
-  snow,
-  ggplot2,
-  survminer
+  snow
 Depends: 
     R (>= 2.10),
     survival,

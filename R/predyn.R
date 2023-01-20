@@ -15,15 +15,18 @@
 
 predyn <- function(newdata, FlexVarJM, s, window =1, event = 1, L =500, graph = F){
   bootstrap <- c()
+  pred.ponct <- c()
   for( t in seq(0.1,window,0.1)){
-    pred.t <- pred_s.t(newdata,FlexVarJM,s,t,event,L)
-    bootstrap<- cbind(bootstrap,pred.t)
+    pred.t <- pred_s.t.ponctuel(newdata,FlexVarJM,s,t,event)
+    pred.t.bootstrap <- pred_s.t.bootstrap(newdata,FlexVarJM,s,t,event,L)
+    pred.ponct <- c(pred.ponct, pred.t)
+    bootstrap<- cbind(bootstrap,pred.t.bootstrap)
   }
   table.pred <- cbind(apply(bootstrap,2, function(x) quantile(x, 0.025)),
-                      apply(bootstrap,2,mean),
+                      pred.ponct,
                       apply(bootstrap,2, function(x) quantile(x, 0.975)))
   table.pred <- as.data.frame(table.pred)
-  colnames(table.pred) <- c("ICinf", "mean", "ICsup")
+  colnames(table.pred) <- c("ICinf", "Prediction", "ICsup")
   graph.predyn <- NULL
 
   if(graph){
@@ -33,7 +36,7 @@ predyn <- function(newdata, FlexVarJM, s, window =1, event = 1, L =500, graph = 
     print(y.axe)
     y.axe2 <- c(rep(NA,length(newdata[,all.vars(FlexVarJM$control$formFixed)[2]])),0,table.pred$ICinf)
     print(y.axe2)
-    y.axe3 <- c(rep(NA,length(newdata[,all.vars(FlexVarJM$control$formFixed)[2]])),0,table.pred$mean)
+    y.axe3 <- c(rep(NA,length(newdata[,all.vars(FlexVarJM$control$formFixed)[2]])),0,table.pred$Prediction)
     print(y.axe3)
     y.axe4 <- c(rep(NA,length(newdata[,all.vars(FlexVarJM$control$formFixed)[2]])),0,table.pred$ICsup)
     plot(x = x.axe, y = y.axe,xlim = c(0,s+window),

@@ -123,7 +123,7 @@
 #' of estimated parameters :
 #'
 #' newdata <- Data_toy[which(Data_toy$ID == 1 & Data_toy$visit <= 3),]
-#' predictions <- predyn(newdata, exemple, s = 3, t = 1, event = 1, L = 500, graph = TRUE)
+#' predictions <- predyn(newdata, exemple, s = 3, window = 1, event = 1, L = 500, graph = TRUE)
 #'
 #'
 #'
