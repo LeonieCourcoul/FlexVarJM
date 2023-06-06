@@ -11,7 +11,7 @@ plot.goodnessoffit<-function(data.long,data.id,pred.CV,break.times, formFixed, f
   IC.inf <- mean.obs - 1.96*sd.obs/sqrt(length.obs)
   IC.sup <- mean.obs + 1.96*sd.obs/sqrt(length.obs)
   prediction <- cbind(pred.CV, data.long$window)
-  mean.pred <- by(prediction[,2], prediction[,3], mean)
+  mean.pred <- by(prediction[,2], prediction[,ncol(prediction)], mean)
   obstime.mean <- by(data.long[,timeVar], data.long$window, mean)
   df <- cbind(obstime.mean, mean.obs, IC.sup, IC.inf, mean.pred)
   df <- as.data.frame(df)

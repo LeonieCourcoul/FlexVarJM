@@ -57,108 +57,159 @@
 #' @examples
 log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
                     nb.alpha.CR, variability_hetero, S,Zq, sharedtype, sharedtype_CR,
-                    hazard_baseline, hazard_baseline_CR, nb.knots.splines, Xtime, Utime, nb_pointsGK,
+                    hazard_baseline, hazard_baseline_CR, ord.splines, Xtime, Utime, nb_pointsGK,
                     Xs,Us, Xslope, Uslope, Xs.slope, Us.slope, indices_beta_slope, Time,
                     st_calc, B, Bs, wk, Z, P, left_trunc, Z_CR, X_base, offset, U, y.new.prog, event1, event2, Ind,
-                    Xs.0, Us.0, Xs.slope.0, Us.slope.0, P.0, st.0,Bs.0,B.CR, Bs.CR, Bs.0.CR
+                    Xs.0, Us.0, Xs.slope.0, Us.slope.0, P.0, st.0,Bs.0,B.CR, Bs.CR, Bs.0.CR,
+                    nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
+                    Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re
 ){
   #Manage parameters
-
-  borne1 <- choose(n = nb.e.a, k = 2) + nb.e.a
-  C <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
-  C[lower.tri(C, diag=T)] <- param[1:borne1]
-  borne2 <- borne1 + nb.priorMean.beta
-  beta <- param[(borne1+1):borne2]
-  borne3 <- borne2 + nb.alpha
-  if(borne3 != borne2){
-    alpha <- param[(borne2+1):borne3]
+  curseur <- 1
+  #Evenement 1 :
+  ## Risque de base :
+  if(hazard_baseline == "Weibull"){
+    #if(scaleWeibull == "square"){
+    #  alpha_weib <- param[curseur]**2
+    #  curseur <- curseur + 1
+    #  shape <- param[curseur]**2
+    #  curseur <- curseur + 1
+    #}
+    #else{
+    #  alpha_weib <- exp(param[curseur])
+    #  curseur <- curseur + 1
+    #  shape <- exp(param[curseur])
+    #  curseur <- curseur + 1
+    #}
+    shape <- param[curseur]**2
+    curseur <- curseur + 1
   }
-  else{
-    alpha <- 0
+  if(hazard_baseline == "Splines"){
+    gamma <- param[(curseur):(curseur+ord.splines+1)]
+    curseur <- curseur + ord.splines + 2
   }
-  if(competing_risk){
-    borne4 <- borne3 + nb.alpha.CR
-    if(borne4 != borne3){
-      alpha.CR <- param[(borne3+1):borne4]
-    }
-    else{
-      alpha.CR <- 0
-    }
+  ## Covariables :
+  if(nb.alpha >=1){
+    alpha <- param[(curseur):(curseur+nb.alpha-1)]
+    curseur <- curseur+nb.alpha
   }
-  else{
-    borne4 <- borne3
-  }
-  if(variability_hetero){
-    mu.log.sigma <- param[borne4+1]
-    tau.log.sigma <- abs(param[borne4+2])
-    #sigma2.log.sigma <- tau.log.sigma**2
-    alpha.sigma <- param[borne4+3]
-    borne5 <- borne4+3
-    log.sigma_al <- matrix(rep(mu.log.sigma,S), nrow = S, byrow = T) + Zq[,nb.e.a+1]*tau.log.sigma
-    sigma_al <- exp(log.sigma_al)
-    if(competing_risk){
-      alpha.sigma.CR <- param[borne4+4]
-      borne5 <- borne4+4
-    }
-  }
-  else{
-    sigma.epsilon <- abs(param[borne4+1])
-    borne5 <- borne4+1
-  }
-  curseur <- borne5
+  ## Association :
   if(sharedtype %in% c("RE")){
     stop("Not implemented yet")
   }
-  if(competing_risk && sharedtype_CR %in% c("RE")){
-    stop("Not implemented yet")
-  }
   if(sharedtype %in% c("CV","CVS")){
-    alpha.current <- param[curseur+1]
-    curseur <- curseur+1
+    alpha.current <- param[curseur]
+    curseur <- curseur + 1
   }
-  if(competing_risk && sharedtype_CR %in% c("CV","CVS")){
-    alpha.current.CR <- param[curseur+1]
-    curseur <- curseur +1
+  if(sharedtype %in%  c("CVS","S")){
+    alpha.slope <- param[curseur]
+    curseur <- curseur + 1
   }
-  if(sharedtype %in% c("CVS","S")){
-    alpha.slope <- param[curseur+1]
-    curseur <- curseur +1
+  if(variability_hetero){
+    alpha.sigma <- param[curseur]
+    curseur <- curseur + 1
   }
-  if(competing_risk && sharedtype_CR %in% c("CVS","S")){
-    alpha.slope.CR <- param[curseur+1]
-    curseur <- curseur +1
+  # Evenement 2
+  if(competing_risk){
+    ## Risque de base :
+    if(hazard_baseline_CR == "Weibull"){
+      #if(scaleWeibull == "square"){
+      #  alpha_weib.CR <- param[curseur]**2
+      #  curseur <- curseur + 1
+      #  shape.CR <- param[curseur]**2
+      #  curseur <- curseur + 1
+      #}
+      #else{
+      #  alpha_weib.CR <- exp(param[curseur])
+      #  curseur <- curseur + 1
+      #  shape.CR <- exp(param[curseur])
+      #  curseur <- curseur + 1
+      #}
+      shape.CR <- param[curseur]**2
+      curseur <- curseur + 1
+    }
+    if(hazard_baseline_CR == "Splines"){
+      gamma.CR <- param[(curseur):(curseur+ord.splines+1)]
+      curseur <- curseur + ord.splines + 2
+    }
+    ## Covariables :
+    if(nb.alpha.CR >=1){
+      alpha.CR <- param[(curseur):(curseur+nb.alpha.CR-1)]
+      curseur <- curseur+nb.alpha.CR
+    }
+    ## Association :
+    if(sharedtype_CR %in% c("RE")){
+      stop("Not implemented yet")
+    }
+    if(sharedtype_CR %in% c("CV","CVS")){
+      alpha.current.CR <- param[curseur]
+      curseur <- curseur + 1
+    }
+    if(sharedtype_CR %in%  c("CVS","S")){
+      alpha.slope.CR <- param[curseur]
+      curseur <- curseur + 1
+    }
+    if(variability_hetero){
+      alpha.sigma.CR <- param[curseur]
+      curseur <- curseur + 1
+    }
   }
-  #if(hazard_baseline == "Exponential"){
-  #  lambda_0 <- alpha[1]
-  #}
-  if(hazard_baseline == "Weibull"){
-    #lambda_0 <- alpha[1]
-    shape <- param[curseur+1]**2
-    curseur <- curseur +1
+  # Marqueur :
+  ## Effets fixes trend :
+  beta <- param[curseur:(curseur+nb.priorMean.beta-1)]
+  curseur <- curseur+nb.priorMean.beta
+  ## Effets fixes var :
+  if(variability_hetero){
+    omega <- param[curseur:(curseur+nb.omega-1)]
+    curseur <- curseur + nb.omega
   }
-  if(hazard_baseline == "Splines"){
-    gamma <- param[(curseur+1):(curseur+nb.knots.splines+2+2)]
-    curseur <- curseur + nb.knots.splines + 2+2
+  else{
+    sigma.epsilon <- param[curseur]
+    curseur <- curseur + 1
   }
-  # if(competing_risk && hazard_baseline_CR == "exponential"){
-  #   lambda0.CR <- alpha.CR[1]
-  #
-  # }
-  if(competing_risk && hazard_baseline_CR == "Weibull"){
-    #lambda0.CR <- alpha.CR[1]
-    shape.CR <- param[curseur+1]**2
-    curseur <- curseur +1
+  ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
+  if(variability_hetero){
+    if(correlated_re){
+      borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+      C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
+      C2 <- matrix(param[(borne1+1):(borne1+nb.e.a.sigma*nb.e.a)],nrow=nb.e.a.sigma,ncol=nb.e.a, byrow = TRUE)
+      borne2 <- borne1+nb.e.a.sigma*nb.e.a + 1
+      borne3 <- borne2 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma - 1
+      C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+      C3[lower.tri(C3, diag=T)] <- param[borne2:borne3]
+      C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
+      MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
+      MatCov <- as.matrix(MatCov)
+    }
+    else{
+      borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+      C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
+      borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
+      C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+      C3[lower.tri(C3, diag=T)] <- param[(borne1+1):borne3]
+      C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
+      C2.bis <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a.sigma,ncol=nb.e.a)
+      MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
+      MatCov <- as.matrix(MatCov)
+    }
   }
-  if(competing_risk && hazard_baseline_CR == "Splines"){
-    gamma.CR <- param[(curseur+1):(curseur+nb.knots.splines+2+2)]
-    curseur <- curseur + nb.knots.splines + 2+2
+  else{
+    borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+    C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+    C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
+    MatCov <- C1
   }
-
+  
   #Manage random effects
-  b_al <- Zq[,1:(nb.e.a)]%*%t(C)
-
+  random.effects <- Zq%*%t(MatCov)
+  b_al <- random.effects[,1:nb.e.a]
+  if(variability_hetero){
+    b_om <- random.effects[,(nb.e.a+1):(nb.e.a+nb.e.a.sigma)]
+  }
   ll_glob <- 0
-
+  
   for(i in 1:Ind){#Computation of contribution to the log_lokelihood
     h <- 1
     etaBaseline <- 0
@@ -166,11 +217,14 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     etaBaseline.0 <- 0
     survLong.0 <- 0
     if(variability_hetero){
-      h <- h*exp(alpha.sigma*sigma_al)
-      etaBaseline <- etaBaseline + alpha.sigma*sigma_al
-      if(left_trunc){
-        etaBaseline.0 <- etaBaseline.0 + alpha.sigma*sigma_al
-      }
+      Otime_i <- Otime[i,]
+      Wtime_i <- Wtime[i,]
+      Os_i <- Os[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+      Ws_i <- Ws[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+      Sigma.CV <- exp((omega%*%Otime_i)[1,1]+b_om%*%Wtime_i)
+      Sigma.current.GK <- exp(matrix(rep(omega%*%t(Os_i),S),nrow=S,byrow = T) + b_om%*%t(Ws_i))
+      h <- h*exp(alpha.sigma*Sigma.CV)
+      survLong <- survLong + alpha.sigma*Sigma.current.GK
     }
     if(competing_risk){
       h_CR <- 1
@@ -179,11 +233,8 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       etaBaseline.0_CR <- 0
       survLong.0_CR <- 0
       if(variability_hetero){
-        h_CR <- h_CR*exp(alpha.sigma.CR*sigma_al)
-        etaBaseline_CR <- etaBaseline_CR + alpha.sigma.CR*sigma_al
-        if(left_trunc){
-          etaBaseline.0_CR <- etaBaseline.0_CR + alpha.sigma.CR*sigma_al
-        }
+        h_CR <- h_CR*exp(alpha.sigma.CR*Sigma.CV)
+        survLong_CR <- survLong_CR + alpha.sigma.CR*Sigma.current.GK
       }
     }
     if(sharedtype %in% c("CV","CVS") || (competing_risk && sharedtype_CR %in% c("CV","CVS")) ){
@@ -214,7 +265,6 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       }
     }
     if(sharedtype %in% c("CVS","S") || (competing_risk && sharedtype_CR %in% c("CVS","S") )){
-      #print("on passe ici")
       Xslope_i <- Xslope[i,]
       Uslope_i <- Uslope[i,]
       Xs.slope_i <- Xs.slope[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
@@ -246,7 +296,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
         }
       }
     }
-
+    
     ###h0
     if(hazard_baseline == "Exponential"){
       h_0 <- 1
@@ -260,9 +310,22 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       st_i <- st_calc[i,]
       h_0 <- shape*(Time_i**(shape-1))
       h_0.GK <- shape*(st_i**(shape-1))*wk
+      #if(scaleWeibull == "square"){
+      #  h_0 <- alpha_weib*shape*((alpha_weib*Time_i)**(shape-1))
+      #  h_0.GK <- alpha_weib*shape*((alpha_weib*st_i)**(shape-1))*wk
+      #}
+      #else{
+      #  h_0 <- alpha_weib*shape*((Time_i)**(shape-1))
+      #  h_0.GK <- alpha_weib*shape*((st_i)**(shape-1))*wk
+      #}
       if(left_trunc){
         st.0_i <- st.0[i,]
-        h_0.GK.0 <-shape*(st.0_i**(shape-1))*wk
+        if(scaleWeibull == "square"){
+          h_0.GK <- alpha_weib*shape*((alpha_weib*st.0_i)**(shape-1))*wk
+        }
+        else{
+          h_0.GK <- alpha_weib*shape*((st.0_i)**(shape-1))*wk
+        }
       }
     }
     if(hazard_baseline == "Splines"){
@@ -276,7 +339,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
         h_0.GK.0 <- (wk*exp(Bs.0_i%*%mat_h0s))
       }
     }
-
+    
     ###hazard function
     Z_i <- Z[i,]
     if(length(Z_i)==0){
@@ -290,15 +353,14 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     if(left_trunc){
       etaBaseline.0 <- etaBaseline.0 + pred_surv
     }
-
+    
     ###GK integration
     survLong <- exp(survLong)
     survLong <- survLong%*%h_0.GK
-
-
+    
     P_i <- P[i]
     Surv <- (-exp(etaBaseline)*P_i*survLong)
-
+    
     if(left_trunc){###Computation of S(T0i)
       #stop("Not implemented yet.")
       survLong.0 <- exp(survLong.0)
@@ -306,7 +368,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       P.0_i <- P.0[i]
       Surv.0 <- exp((-exp(etaBaseline.0)*P.0_i*survLong.0))
     }
-
+    
     if(competing_risk){
       ###h0
       if(hazard_baseline_CR == "Exponential"){
@@ -321,9 +383,22 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
         st_i <- st_calc[i,]
         h_0.CR <- shape.CR*(Time_i**(shape.CR-1))
         h_0.GK.CR <- shape.CR*(st_i**(shape.CR-1))*wk
+        #if(scaleWeibull == "square"){
+        #  h_0.CR <- alpha_weib.CR*shape.CR*((alpha_weib.CR*Time_i)**(shape.CR-1))
+        #  h_0.GK.CR <- alpha_weib.CR*shape.CR*((alpha_weib.CR*st_i)**(shape.CR-1))*wk
+        #}
+        #else{
+        #  h_0.CR <- alpha_weib.CR*shape.CR*((Time_i)**(shape.CR-1))
+        #  h_0.GK.CR <- alpha_weib.CR*shape.CR*((st_i)**(shape.CR-1))*wk
+        #}
         if(left_trunc){
           st.0_i <- st.0[i,]
-          h_0.GK.0_CR <- shape.CR*(st.0_i**(shape.CR-1))*wk
+          if(scaleWeibull == "square"){
+            h_0.GK_CR <- alpha_weib.CR*shape.CR*((alpha_weib.CR*st.0_i)**(shape.CR-1))*wk
+          }
+          else{
+            h_0.GK_CR <- alpha_weib.CR*shape.CR*((st.0_i)**(shape.CR-1))*wk
+          }
         }
       }
       if(hazard_baseline_CR == "Splines"){
@@ -337,7 +412,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
           h_0.GK.0_CR <- (wk*exp(Bs.0.CR_i%*%mat_h0s.CR))
         }
       }
-
+      
       ###hazard function
       Z.CR_i <- Z_CR[i,]
       if(length(Z.CR_i)==0){
@@ -351,13 +426,13 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       if(left_trunc){
         etaBaseline.0_CR <- etaBaseline.0_CR + pred_surv.CR
       }
-
+      
       ###GK integration
       survLong_CR <- exp(survLong_CR)
       survLong_CR <- survLong_CR%*%h_0.GK.CR
       P_i <- P[i]
       Surv.CR <- (-exp(etaBaseline_CR)*P_i*survLong_CR)
-
+      
       if(left_trunc){###Computation of S(T0i)
         #stop("Not implemented yet.")
         survLong.0_CR <- exp(survLong.0_CR)
@@ -366,29 +441,41 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
         Surv.0.CR <- exp((-exp(etaBaseline.0_CR)*P.0_i*survLong.0_CR))
       }
     }
-
+    
     #Longitudinal part
     X_base_i <- X_base[offset[i]:(offset[i+1]-1),]
+    X_base_i <- matrix(X_base_i, nrow = offset[i+1]-offset[i])
+    O_base_i <- O_base[offset[i]:(offset[i+1]-1),]
+    O_base_i <- matrix(O_base_i, nrow = offset[i+1]-offset[i])
+    W_base_i <- W_base[offset[i]:(offset[i+1]-1),]
+    W_base_i <- matrix(W_base_i, nrow = offset[i+1]-offset[i])
     U_i <- U[offset[i]:(offset[i+1]-1),]
+    U_i <- matrix(U_i, nrow = offset[i+1]-offset[i])
     y_i <- y.new.prog[offset[i]:(offset[i+1]-1)]
-    if(variability_hetero  == T){
-      sigma.long <- sigma_al
-    }
-    else{
-      sigma.long <- sigma.epsilon
-    }
     if(is.null(nrow(X_base_i))){
+      if(variability_hetero){
+        sigma.long <- exp((omega%*%O_base_i)[1,1] + b_om%*%W_base_i)
+      }
+      else{
+        sigma.long <- sigma.epsilon
+      }
       CV <- (beta%*%X_base_i)[1,1] + b_al%*%U_i
       f_Y_b_sigma <- log((1/(sqrt(2*pi)*sigma.long))) + (-1/2)*((y_i-CV)/sigma.long)**2 #dnorm(x=y_i, mean = CV, sd = sigma.long)
     }
     else{
       f_Y_b_sigma <- rep(0,S)
       for(k in 1:nrow(X_base_i)){
+        if(variability_hetero){
+          sigma.long <- exp((omega%*%O_base_i[k,])[1,1] + b_om%*%W_base_i[k,])
+        }
+        else{
+          sigma.long <- sigma.epsilon
+        }
         CV <- (beta%*%X_base_i[k,])[1,1] + b_al%*%U_i[k,]
-        f_Y_b_sigma <- f_Y_b_sigma + (-1/2)*((y_i[k]-CV)/sigma.long)**2 #*dnorm(x = y_i[k], mean = CV, sd = sigma.long)
+        f_Y_b_sigma <- log((1/(sqrt(2*pi)*sigma.long)))+f_Y_b_sigma + (-1/2)*((y_i[k]-CV)/sigma.long)**2 #*dnorm(x = y_i[k], mean = CV, sd = sigma.long)
       }
-      add <- nrow(X_base_i)*log((1/(sqrt(2*pi)*sigma.long)))
-      f_Y_b_sigma <- f_Y_b_sigma+add
+      # add <- nrow(X_base_i)*log((1/(sqrt(2*pi)*sigma.long)))
+      # f_Y_b_sigma <- f_Y_b_sigma+add
     }
     event1_i <- event1[i]
     if(competing_risk){
@@ -397,19 +484,19 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       log_dens_int <- f_Y_b_sigma + log(h**event1_i)+log(h_CR**event2_i)+Surv+Surv.CR
       Clogexp <- max(log_dens_int) - 500
       log_dens_int <- log_dens_int - Clogexp
-
-
+      
+      
       log_dens <- Clogexp + log(sum(exp(log_dens_int))) - log(S)
-
+      
     }
     else{
       log_dens_int <- f_Y_b_sigma + log(h**event1_i)+Surv
       Clogexp <- max(log_dens_int) - 500
       log_dens_int <- log_dens_int - Clogexp
       log_dens <- Clogexp  +log(sum(exp(log_dens_int))) - log(S)
-
+      
     }
-
+    
     if(left_trunc){
       #stop("Not yet implemented.")
       if(competing_risk){
@@ -417,18 +504,17 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       }
       else{
         den <- log(sum(Surv.0))-log(S)
-        #print(den)
       }
       log_dens <- log_dens - den
-      #print(log_dens)
     }
     ll_glob <- ll_glob + log_dens
-    #print(log_dens)
-  }
 
+}
+  
+  
   #print(ll_glob)
-  #if(is.na(ll_glob)){
-  # ll_glob <- -10E8
-  #}
+  if(is.na(ll_glob)){
+    ll_glob <- -10E8
+  }
   ll_glob
 }

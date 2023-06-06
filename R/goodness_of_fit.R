@@ -7,10 +7,8 @@
 #'
 #' @examples
 #'
-goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
-  cat("Computation of prediction \n")
-  time.prog1 <- Sys.time()
-
+goodness_of_fit <- function(FlexVarJM, graph = F, break.times = NULL){
+  cat("Computation of predictions \n")
   Xtime <- NULL
   Utime <- NULL
   Xs <- NULL
@@ -41,35 +39,54 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
   st.0.CR <- NULL
   Bs.0.CR <- NULL
   gamma.CR <- NULL
+  rr.CR <- NULL
+  O_base <- NULL
+  nb.e.a.sigma <- NULL
+  nb.omega <- NULL
+  Otime <- NULL
+  Wtime <- NULL
+  Os <- NULL
+  Ws <- NULL
+  W_base <- NULL
+  shape <- NULL
+  shape.CR <- NULL
+  
   #data management
-
   data.long <- FlexVarJM$control$data.long
   id <- as.integer(data.long[all.vars(FlexVarJM$control$formGroup)][,1])
-  #print(id)
-  if(!("id" %in% colnames(FlexVarJM$control$data.long))) #To have a column named "id"
+  if(!("id" %in% colnames(FlexVarJM$control$data.long))){ #To have a column named "id"
     data.long <- cbind(FlexVarJM$control$data.long, id = id)
+  }
   idVar = "id"
-
-  ##longitudinal part
-  list.long <- data.manag.long(FlexVarJM$control$formGroup,FlexVarJM$control$formFixed, FlexVarJM$control$formRandom,data.long)
+  
+  #Longitudinal part
+  list.long <- data.manag.long(FlexVarJM$control$formGroup,FlexVarJM$control$formFixed, FlexVarJM$control$formRandom,FlexVarJM$control$data.long)
   X_base <- list.long$X
   U <- list.long$U
+  nb.e.a <- ncol(U)
   y.new.prog <- list.long$y.new.prog
-  data.long <- cbind(data.long,y.new.prog)
+  list.var <- data.manag.sigma(FlexVarJM$control$formGroup,FlexVarJM$control$formFixedVar, FlexVarJM$control$formRandomVar,FlexVarJM$control$data.long)
+  O_base <- list.var$X
+  W_base <- list.var$U
+  nb.omega <- ncol(O_base)
+  #print(nb.omega)
+  nb.e.a.sigma <- ncol(W_base)
+  #data.long <- cbind(data.long,y.new.prog)
+  data.long <- data.long %>% group_by(id) %>% dplyr::mutate(sd.emp = sd(y.new.prog),
+                                                            VC.emp = mean(y.new.prog) )%>% ungroup()
   data.long <- as.data.frame(data.long)
   offset <- list.long$offset
   Ind <- list.long$I
-
-  ## survival part
+  
+  # Survival part
   list.surv <- data.manag.surv(FlexVarJM$control$formGroup, FlexVarJM$control$formSurv, data.long, formSurv_CompRisk = FlexVarJM$control$formSurv_CR)
   event1 <- list.surv$event1
   event2 <- list.surv$event2
   Time <- list.surv$Time
-
-  ##dependance
+  
+  #Dependence
   data.id <- data.long[!duplicated(id),]
   data.id <- cbind(data.id,event1)
-  lag = 0
   if(FlexVarJM$control$sharedtype %in% c("random effects")){
     stop("Not implemented yet")
   }
@@ -115,8 +132,8 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
       }
     }
   }
-
-
+  
+  
   if(FlexVarJM$control$hazard_baseline == "Exponential"){
     Z <- list.surv$Z
   }
@@ -144,7 +161,7 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
         stop("This type of base survival function is not implemented.")
       }
     }
-
+    
   }
   nb.alpha.CR <- 0
   if(FlexVarJM$control$competing_risk){
@@ -192,9 +209,9 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
           Xs.slope.0 <- list.data.GK.slope.0$Xtime
           Us.slope.0 <- list.data.GK.slope.0$Utime
         }
-
+        
       }
-
+      
       if(FlexVarJM$control$hazard_baseline_CR == "Exponential"){
         Z_CR <- list.surv$Z_CR
       }
@@ -222,123 +239,177 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
             stop("This type of base survival function is not implemented.")
           }
         }
-
+        
       }
     }
   }
-
-  #cat("Prediction \n")
-  shape <- 0
-  shape.CR <- 0
-  estim_param <- FlexVarJM$table.res$Estimation
-  pred.e.a.table <- c()
-  pred.CV <- c()
-
-  borne1 <- choose(n = FlexVarJM$control$nb.e.a, k = 2) + FlexVarJM$control$nb.e.a
-  C <- matrix(rep(0,(FlexVarJM$control$nb.e.a)**2),nrow=FlexVarJM$control$nb.e.a,ncol=FlexVarJM$control$nb.e.a)
-  C[lower.tri(C, diag=T)] <- estim_param[1:borne1]
-  Sigma.b <- C%*%t(C)
-  borne2 <- borne1 + FlexVarJM$control$nb.priorMean.beta
-  beta <- estim_param[(borne1+1):borne2]
-  borne3 <- borne2 + FlexVarJM$control$nb.alpha
-  if(borne3 != borne2){
-    alpha <- estim_param[(borne2+1):borne3]
-  }
-  else{
-    alpha <- 0
-  }
-  alpha.CR <- 0
-  if(FlexVarJM$control$competing_risk){
-    borne4 <- borne3 + FlexVarJM$control$nb.alpha.CR
-    if(borne4 != borne3){
-      alpha.CR <- estim_param[(borne3+1):borne4]
-    }
-    else{
-      alpha.CR <- 0
-    }
-  }
-  else{
-    borne4 <- borne3
-  }
-  mu.log.sigma <- 0
-  tau.log.sigma <- 0
-  alpha.sigma <- 0
-  alpha.sigma.CR <- 0
-  sigma.epsilon <- 0
   if(FlexVarJM$control$variability_hetero){
-    mu.log.sigma <- estim_param[borne4+1]
-    tau.log.sigma <- abs(estim_param[borne4+2])
-    alpha.sigma <- estim_param[borne4+3]
-    borne5 <- borne4+3
-    if(FlexVarJM$control$competing_risk){
-      alpha.sigma.CR <- estim_param[borne4+4]
-      borne5 <- borne4+4
-    }
+    list.GaussKronrod <- data.GaussKronrod(data.id, list.surv$Time, k = FlexVarJM$control$nb_pointsGK)
+    wk <- list.GaussKronrod$wk
+    st_calc <- list.GaussKronrod$st
+    P <- list.GaussKronrod$P
+    id.GK <- list.GaussKronrod$id.GK
+    
+    list.data.current.sigma.time <- data.time(data.id, list.surv$Time, FlexVarJM$control$formFixedVar, FlexVarJM$control$formRandomVar,FlexVarJM$control$timeVar)
+    list.data.GK.current.sigma <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
+                                            FlexVarJM$control$formFixedVar, FlexVarJM$control$formRandomVar,FlexVarJM$control$timeVar)
+    Otime <- list.data.current.sigma.time$Xtime
+    Wtime <- list.data.current.sigma.time$Utime
+    Os <- list.data.GK.current.sigma$Xtime
+    Ws <- list.data.GK.current.sigma$Utime
   }
-  else{
-    sigma.epsilon <- abs(estim_param[borne4+1])
-    borne5 <- borne4+1
+  #Manage parameters
+  estim_param <- FlexVarJM$table.res$Estimation
+  curseur <- 1
+  #Evenement 1 :
+  ## Risque de base :
+  if(FlexVarJM$control$hazard_baseline == "Weibull"){
+    #if(scaleWeibull == "square"){
+    #  alpha_weib <- param[curseur]**2
+    #  curseur <- curseur + 1
+    #  shape <- param[curseur]**2
+    #  curseur <- curseur + 1
+    #}
+    #else{
+    #  alpha_weib <- exp(param[curseur])
+    #  curseur <- curseur + 1
+    #  shape <- exp(param[curseur])
+    #  curseur <- curseur + 1
+    #}
+    shape <- estim_param[curseur]**2
+    curseur <- curseur + 1
   }
-  curseur <- borne5
-  alpha.current <- 0
-  alpha.current.CR <- 0
-  alpha.slope <- 0
-  alpha.slope.CR <- 0
-  shape <- 0
-  gamma <- 0
-  shape.CR <- 0
-  gamma.CR <- 0
-  if(FlexVarJM$control$sharedtype %in% c("random effects")){
-    stop("Not implemented yet")
+  if(FlexVarJM$control$hazard_baseline == "Splines"){
+    gamma <- estim_param[(curseur):(curseur+FlexVarJM$control$ord.splines+1)]
+    curseur <- curseur + FlexVarJM$control$ord.splines + 2
   }
-  if(FlexVarJM$control$competing_risk && FlexVarJM$control$sharedtype_CR %in% c("random effects")){
+  ## Covariables :
+  if(FlexVarJM$control$nb.alpha >=1){
+    alpha <- estim_param[(curseur):(curseur+FlexVarJM$control$nb.alpha-1)]
+    curseur <- curseur+FlexVarJM$control$nb.alpha
+  }
+  ## Association :
+  if(FlexVarJM$control$sharedtype %in% c("RE")){
     stop("Not implemented yet")
   }
   if(FlexVarJM$control$sharedtype %in% c("CV","CVS")){
-    alpha.current <- estim_param[curseur+1]
-    curseur <- curseur+1
+    alpha.current <- estim_param[curseur]
+    curseur <- curseur + 1
   }
-  if(FlexVarJM$control$competing_risk &&FlexVarJM$control$sharedtype_CR %in% c("CV","CVS")){
-    alpha.current.CR <- estim_param[curseur+1]
-    curseur <- curseur +1
+  if(FlexVarJM$control$sharedtype %in%  c("CVS","S")){
+    alpha.slope <- estim_param[curseur]
+    curseur <- curseur + 1
   }
-  if(FlexVarJM$control$sharedtype %in% c("CVS","S")){
-    alpha.slope <- estim_param[curseur+1]
-    curseur <- curseur +1
+  if(FlexVarJM$control$variability_hetero){
+    alpha.sigma <- estim_param[curseur]
+    curseur <- curseur + 1
   }
-  if(FlexVarJM$control$competing_risk && FlexVarJM$control$sharedtype_CR %in% c("CVS","S")){
-    alpha.slope.CR <- estim_param[curseur+1]
-    curseur <- curseur +1
+  # Evenement 2
+  if(FlexVarJM$control$competing_risk){
+    ## Risque de base :
+    if(FlexVarJM$control$hazard_baseline_CR == "Weibull"){
+      #if(scaleWeibull == "square"){
+      #  alpha_weib.CR <- param[curseur]**2
+      #  curseur <- curseur + 1
+      #  shape.CR <- param[curseur]**2
+      #  curseur <- curseur + 1
+      #}
+      #else{
+      #  alpha_weib.CR <- exp(param[curseur])
+      #  curseur <- curseur + 1
+      #  shape.CR <- exp(param[curseur])
+      #  curseur <- curseur + 1
+      #}
+      shape.CR <- estim_param[curseur]**2
+      curseur <- curseur + 1
+    }
+    if(FlexVarJM$control$hazard_baseline_CR == "Splines"){
+      gamma.CR <- estim_param[(curseur):(curseur+FlexVarJM$control$ord.splines+1)]
+      curseur <- curseur + FlexVarJM$control$ord.splines + 2
+    }
+    ## Covariables :
+    if(FlexVarJM$control$nb.alpha.CR >=1){
+      alpha.CR <- estim_param[(curseur):(curseur+FlexVarJM$control$nb.alpha.CR-1)]
+      curseur <- curseur+FlexVarJM$control$nb.alpha.CR
+    }
+    ## Association :
+    if(FlexVarJM$control$sharedtype %in% c("RE")){
+      stop("Not implemented yet")
+    }
+    if(FlexVarJM$control$sharedtype %in% c("CV","CVS")){
+      alpha.current.CR <- estim_param[curseur]
+      curseur <- curseur + 1
+    }
+    if(FlexVarJM$control$sharedtype %in%  c("CVS","S")){
+      alpha.slope.CR <- estim_param[curseur]
+      curseur <- curseur + 1
+    }
+    if(FlexVarJM$control$variability_hetero){
+      alpha.sigma.CR <- estim_param[curseur]
+      curseur <- curseur + 1
+    }
   }
-  if(FlexVarJM$control$hazard_baseline == "Weibull"){
-    shape <- estim_param[curseur+1]**2
-    curseur <- curseur +1
+  # Marqueur :
+  ## Effets fixes trend :
+  beta <- estim_param[curseur:(curseur+FlexVarJM$control$nb.priorMean.beta-1)]
+  curseur <- curseur+FlexVarJM$control$nb.priorMean.beta
+  ## Effets fixes var :
+  if(FlexVarJM$control$variability_hetero){
+    omega <- estim_param[curseur:(curseur+FlexVarJM$control$nb.omega-1)]
+    curseur <- curseur + FlexVarJM$control$nb.omega
   }
-  if(FlexVarJM$control$hazard_baseline == "Splines"){
-    gamma <- estim_param[(curseur+1):(curseur+FlexVarJM$control$ord.splines+2)]
-    curseur <- curseur + FlexVarJM$control$ord.splines + 2
+  else{
+    sigma.epsilon <- estim_param[curseur]
+    curseur <- curseur + 1
   }
-  if(FlexVarJM$control$competing_risk && FlexVarJM$control$hazard_baseline_CR == "Weibull"){
-    shape.CR <- estim_param[curseur+1]**2
-    curseur <- curseur +1
+  ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
+  if(FlexVarJM$control$variability_hetero){
+    if(FlexVarJM$control$correlated_re){
+      borne1 <- curseur + choose(n = FlexVarJM$control$nb.e.a, k = 2) + FlexVarJM$control$nb.e.a - 1
+      C1 <- matrix(rep(0,(FlexVarJM$control$nb.e.a)**2),nrow=FlexVarJM$control$nb.e.a,ncol=FlexVarJM$control$nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- estim_param[curseur:borne1]
+      C2 <- matrix(estim_param[(borne1+1):(borne1+FlexVarJM$control$nb.e.a.sigma*FlexVarJM$control$nb.e.a)],nrow=FlexVarJM$control$nb.e.a.sigma,ncol=FlexVarJM$control$nb.e.a, byrow = TRUE)
+      borne2 <- borne1+FlexVarJM$control$nb.e.a.sigma*FlexVarJM$control$nb.e.a + 1
+      borne3 <- borne2 + choose(n = FlexVarJM$control$nb.e.a.sigma, k = 2) + FlexVarJM$control$nb.e.a.sigma - 1
+      C3 <- matrix(rep(0,(FlexVarJM$control$nb.e.a.sigma)**2),nrow=FlexVarJM$control$nb.e.a.sigma,ncol=FlexVarJM$control$nb.e.a.sigma)
+      C3[lower.tri(C3, diag=T)] <- estim_param[borne2:borne3]
+      C4 <- matrix(rep(0,FlexVarJM$control$nb.e.a*FlexVarJM$control$nb.e.a.sigma),nrow=FlexVarJM$control$nb.e.a,ncol=FlexVarJM$control$nb.e.a.sigma)
+      MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
+      MatCov <- as.matrix(MatCov)
+      diag(MatCov) <- abs(diag(MatCov))
+    }
+    else{
+      borne1 <- curseur + choose(n = FlexVarJM$control$nb.e.a, k = 2) + FlexVarJM$control$nb.e.a - 1
+      C1 <- matrix(rep(0,(FlexVarJM$control$nb.e.a)**2),nrow=FlexVarJM$control$nb.e.a,ncol=FlexVarJM$control$nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- estim_param[curseur:borne1]
+      borne3 <- borne1 + choose(n = FlexVarJM$control$nb.e.a.sigma, k = 2) + FlexVarJM$control$nb.e.a.sigma
+      C3 <- matrix(rep(0,(FlexVarJM$control$nb.e.a.sigma)**2),nrow=FlexVarJM$control$nb.e.a.sigma,ncol=FlexVarJM$control$nb.e.a.sigma)
+      C3[lower.tri(C3, diag=T)] <- estim_param[(borne1+1):borne3]
+      C4 <- matrix(rep(0,FlexVarJM$control$nb.e.a*FlexVarJM$control$nb.e.a.sigma),nrow=FlexVarJM$control$nb.e.a,ncol=FlexVarJM$control$nb.e.a.sigma)
+      C2.bis <- matrix(rep(0,FlexVarJM$control$nb.e.a*FlexVarJM$control$nb.e.a.sigma),nrow=FlexVarJM$control$nb.e.a.sigma,ncol=FlexVarJM$control$nb.e.a)
+      MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
+      MatCov <- as.matrix(MatCov)
+      diag(MatCov) <- abs(diag(MatCov))
+    }
   }
-  if(FlexVarJM$control$competing_risk && FlexVarJM$control$hazard_baseline_CR == "Splines"){
-    gamma.CR <- estim_param[(curseur+1):(curseur+FlexVarJM$control$ord.splines+2)]
-    curseur <- curseur + FlexVarJM$control$ord.splines + 2
+  else{
+    borne1 <- curseur + choose(n = FlexVarJM$control$nb.e.a, k = 2) + FlexVarJM$control$nb.e.a - 1
+    C1 <- matrix(rep(0,(FlexVarJM$control$nb.e.a)**2),nrow=FlexVarJM$control$nb.e.a,ncol=FlexVarJM$control$nb.e.a)
+    C1[lower.tri(C1, diag=T)] <- estim_param[curseur:borne1]
+    MatCov <- C1
   }
-
-  #print(head(X_base))
   Cum_risk2 <- c()
   Cum_risk1 <- c()
   Time.sort.unique <- unique(sort(Time))
   data.GaussKronrod.sort.unique <- data.GaussKronrod(data.id = data.id, Time = Time.sort.unique, k = FlexVarJM$control$nb_pointsGK)
   st_calc.sort.unique <- data.GaussKronrod.sort.unique$st
   P.sort.unique <- data.GaussKronrod.sort.unique$P
+  pred.r.e.table <- c()
+  pred.CV <- c()
   for(i in 1:Ind){
-    #print(i)
+    print(i)
     Cum_risk_2i <- c()
     Cum_risk_1i <- c()
-    #print(i)
     X_base_i <- X_base[offset[i]:(offset[i+1]-1),]
     U_i <- U[offset[i]:(offset[i+1]-1),]
     y_i <- y.new.prog[offset[i]:(offset[i+1]-1)]
@@ -361,84 +432,105 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
     B.CR_i <- B.CR[i,]
     Bs.CR_i <- Bs.CR[(FlexVarJM$control$nb_pointsGK*(i-1)+1):(FlexVarJM$control$nb_pointsGK*i),]
     Z.CR_i <- Z_CR[i,]
-    sigma_i <- mu.log.sigma
     if(is.null(dim(U_i))){
       U_i <- matrix(U_i, nrow= 1)
       X_base_i <- matrix(X_base_i, nrow= 1)
     }
-    bi <- Sigma.b%*%t(U_i)%*%solve(U_i%*%Sigma.b%*%t(U_i) + diag(rep(exp(sigma_i),nrow(U_i)), nrow = nrow(U_i), ncol = nrow(U_i)))%*%(y_i - X_base_i%*%beta)
-
-    ### Longitudinal prediction
-    #print("Longitudinal part")
-    binit <- c(bi,sigma_i)
-
-    pred.e.a <- marqLevAlg(binit, fn = predict_re, minimize = FALSE,
-                           nb.e.a = FlexVarJM$control$nb.e.a, X_base_i = X_base_i, beta = beta, U_i =U_i, y_i=y_i,
-                           Sigma.b = Sigma.b, mu.log.sigma = mu.log.sigma, tau.log.sigma = tau.log.sigma,
-                           variability_hetero = FlexVarJM$control$variability_hetero,
-                           alpha.sigma = alpha.sigma, competing_risk = FlexVarJM$control$competing_risk, alpha.sigma.CR = alpha.sigma.CR,
-                           sharedtype = FlexVarJM$control$sharedtype, sharedtype_CR = FlexVarJM$control$sharedtype_CR,
-                           Xtime_i = Xtime_i, Utime_i = Utime_i, Xs_i = Xs_i, Us_i = Us_i,
-                           alpha.current = alpha.current, alpha.current.CR = alpha.current.CR,
-                           Xslope_i = Xslope_i, Uslope_i = Uslope_i, Xs.slope_i = Xs.slope_i, Us.slope_i = Us.slope_i,
-                           alpha.slope = alpha.slope, alpha.slope.CR = alpha.slope.CR, indices_beta_slope = FlexVarJM$control$indices_beta_slope,
-                           hazard_baseline = FlexVarJM$control$hazard_baseline,  wk = wk, shape = shape,
-                           Time_i = Time_i,  st_i = st_i,gamma = gamma, B_i = B_i, Bs_i = Bs_i, Z_i = Z_i, alpha = alpha, P_i = P_i,
-                           hazard_baseline_CR = FlexVarJM$control$hazard_baseline_CR, shape.CR = shape.CR, gamma.CR = gamma.CR, B.CR_i = B.CR_i, Bs.CR_i = Bs.CR_i,
-                           Z.CR_i = Z.CR_i,alpha.CR = alpha.CR,event1_i = event1_i, event2_i=event2_i,
-                           nproc = FlexVarJM$control$nproc,
+    O_base_i <- O_base[offset[i]:(offset[i+1]-1),]
+    W_base_i <- W_base[offset[i]:(offset[i+1]-1),]
+    if(is.null(dim(W_base_i))){
+      W_base_i <- matrix(W_base_i, nrow= 1)
+      O_base_i <- matrix(O_base_i, nrow= 1)
+    }
+    Otime_i <- Otime[i,]
+    Wtime_i <- Wtime[i,]
+    Os_i <- Os[(FlexVarJM$control$nb_pointsGK*(i-1)+1):(FlexVarJM$control$nb_pointsGK*i),]
+    Ws_i <- Ws[(FlexVarJM$control$nb_pointsGK*(i-1)+1):(FlexVarJM$control$nb_pointsGK*i),]
+    
+    Sigma.re <- MatCov%*%t(MatCov)
+    if(FlexVarJM$control$variability_hetero){
+      binit <- mvtnorm::rmvnorm(1, mean = rep(0, FlexVarJM$control$nb.e.a+FlexVarJM$control$nb.e.a.sigma), Sigma.re)
+    }
+    else{
+      binit <- mvtnorm::rmvnorm(1, mean = rep(0, FlexVarJM$control$nb.e.a), Sigma.re)
+    }
+    
+    #Longitudinal prediction
+    
+    pred.r.e <- marqLevAlg(binit, fn = predict_re, minimize = FALSE,
+                           nb.e.a = FlexVarJM$control$nb.e.a, variability_hetero = FlexVarJM$control$variability_hetero, nb.e.a.sigma = FlexVarJM$control$nb.e.a.sigma,
+                           Sigma.re = Sigma.re, X_base_i = X_base_i, U_i = U_i, beta = beta, omega = omega, O_base_i = O_base_i,
+                           W_base_i = W_base_i, y_i = y_i, sigma.epsilon = sigma.epsilon, Otime_i = Otime_i, Wtime_i = Wtime_i,
+                           Os_i = Os_i, Ws_i = Ws_i, S = FlexVarJM$control$S2, alpha.sigma = alpha.sigma, competing_risk = FlexVarJM$control$competing_risk, alpha.sigma.CR = alpha.sigma.CR,
+                           sharedtype = FlexVarJM$control$sharedtype, sharedtype_CR = FlexVarJM$control$sharedtype_CR, alpha.current = alpha.current, alpha.current.CR = alpha.current.CR,
+                           alpha.slope = alpha.slope, alpha.slope.CR = alpha.slope.CR, Xtime_i = Xtime_i, Utime_i = Utime_i, Xs_i = Xs_i, Us_i = Us_i,
+                           indices_beta_slope = FlexVarJM$control$indices_beta_slope, hazard_baseline = FlexVarJM$control$hazard_baseline, wk = wk, st_i = st_i, gamma = gamma, B_i = B_i, Bs_i = Bs_i,
+                           Z_i = Z_i, alpha = alpha, shape = shape, Time_i = Time_i, P_i = P_i, hazard_baseline_CR = FlexVarJM$control$hazard_baseline_CR, gamma.CR = gamma.CR, B.CR_i = B.CR_i,
+                           Bs.CR_i = Bs.CR_i, Z.CR_i = Z.CR_i, alpha.CR = alpha.CR, shape.CR = shape.CR, event1_i = event1_i, event2_i = event2_i,Xs.slope_i = Xs.slope_i, Us.slope_i = Us.slope_i,
+                           Xslope_i = Xslope_i, Uslope_i = Uslope_i, nproc = 1,
                            clustertype = FlexVarJM$control$clustertype,
                            maxiter = FlexVarJM$control$maxiter, print.info = F,blinding = TRUE, epsa = FlexVarJM$control$epsa,
                            epsb = FlexVarJM$control$epsb, epsd = FlexVarJM$control$epsd)
-
-
-
-    #print(pred.e.a$b)
-    pred.e.a.table <- rbind(pred.e.a.table,c(data.id$ID[i], pred.e.a$b))
-    CV <- X_base_i%*%beta + U_i%*%pred.e.a$b[1:(FlexVarJM$control$nb.e.a)]
-    pred.CV <- rbind(pred.CV,cbind(rep(data.id$ID[i],length(CV)), CV))
-
+    
+    
+    pred.r.e.table <- rbind(pred.r.e.table,c(data.id$ID[i], pred.r.e$b))
+    CV <- X_base_i%*%beta + U_i%*%pred.r.e$b[1:(FlexVarJM$control$nb.e.a)]
+    if(FlexVarJM$control$variability_hetero){
+      Var <- O_base_i%*%omega + W_base_i%*%pred.r.e$b[(FlexVarJM$control$nb.e.a+1):(FlexVarJM$control$nb.e.a+FlexVarJM$control$nb.e.a.sigma)]
+    }
+    if(FlexVarJM$control$variability_hetero){
+      pred.CV <- rbind(pred.CV,cbind(rep(data.id$ID[i],length(CV)), CV,Var,X_base[,2]))
+    }
+    else{
+      pred.CV <- rbind(pred.CV,cbind(rep(data.id$ID[i],length(CV)), CV,X_base[,2]))
+    }
+    
     ### Survival goodness-of-fit
     #print("Survival part")
-
+    
     for(j in 1:nrow(st_calc.sort.unique)){
-
+      
       if(FlexVarJM$control$variability_hetero){
-        pred_haz <- alpha.sigma*exp(pred.e.a$b[FlexVarJM$control$nb.e.a+1])
+        list.data.GK.current.sigma.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[(FlexVarJM$control$nb_pointsGK*(i-1)+1):(FlexVarJM$control$nb_pointsGK*i),], st_calc.sort.unique[j,],
+                                                            FlexVarJM$control$formFixedVar, FlexVarJM$control$formRandomVar,FlexVarJM$control$timeVar)
+        Os.j <- list.data.GK.current.sigma.sort.unique$Xtime
+        Ws.j <- list.data.GK.current.sigma.sort.unique$Utime
+        Sigma.current.GK <- exp(omega%*%t(Os_i) + pred.r.e$b[(FlexVarJM$control$nb.e.a+1):(FlexVarJM$control$nb.e.a+FlexVarJM$control$nb.e.a.sigma)]%*%t(Ws_i))
+        pred_haz <- alpha.sigma*Sigma.current.GK
       }
       else{
         pred_haz <- 0
       }
-
+      
       if(FlexVarJM$control$sharedtype %in% c("CV","CVS") || (FlexVarJM$control$competing_risk && FlexVarJM$control$sharedtype_CR %in% c("CV","CVS")) ){
-
+        
         list.data.GK.current.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[(FlexVarJM$control$nb_pointsGK*(i-1)+1):(FlexVarJM$control$nb_pointsGK*i),], st_calc.sort.unique[j,],
                                                       FlexVarJM$control$formFixed, FlexVarJM$control$formRandom,FlexVarJM$control$timeVar)
-
+        
         Xs.j <- list.data.GK.current.sort.unique$Xtime
         Us.j <- list.data.GK.current.sort.unique$Utime
-
-        current.GK <-beta%*%t(Xs.j) + pred.e.a$b[1:(FlexVarJM$control$nb.e.a)]%*%t(Us.j)
-
+        
+        current.GK <-beta%*%t(Xs.j) + pred.r.e$b[1:(FlexVarJM$control$nb.e.a)]%*%t(Us.j)
+        
         if(FlexVarJM$control$sharedtype %in% c("CV","CVS")){
           pred_haz <- pred_haz +  alpha.current*current.GK
         }
       }
-
+      
       if(FlexVarJM$control$sharedtype %in% c("CVS","S") || (FlexVarJM$control$competing_risk && FlexVarJM$control$sharedtype_CR %in% c("CVS","S") )){
         list.data.GK.slope.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[(FlexVarJM$control$nb_pointsGK*(i-1)+1):(FlexVarJM$control$nb_pointsGK*i),], st_calc.sort.unique[j,],
                                                     FlexVarJM$control$formSlopeFixed, FlexVarJM$control$formSlopeRandom,FlexVarJM$control$timeVar)
-
+        
         Xs.slope.j <- list.data.GK.slope.sort.unique$Xtime
         Us.slope.j <- list.data.GK.slope.sort.unique$Utime
-
-        slope.GK <- beta[indices_beta_slope]%*%t(Xs.slope.j) +  pred.e.a$b[2:(FlexVarJM$control$nb.e.a)]%*%t(Us.slope.j)
-
+        
+        slope.GK <- beta[FlexVarJM$control$indices_beta_slope]%*%t(Xs.slope.j) +  pred.r.e$b[2:(FlexVarJM$control$nb.e.a)]%*%t(Us.slope.j)
+        
         if(FlexVarJM$control$sharedtype %in% c("CVS","S")){
           pred_haz <- pred_haz +  alpha.slope*slope.GK
         }
       }
-
+      
       if(FlexVarJM$control$hazard_baseline == "Exponential"){
         h_0 <- 1
         h_0.GK <- wk
@@ -454,7 +546,7 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
         mat_h0s <- matrix(gamma,ncol=1)
         h_0.GK <- (wk*exp(Bs_j%*%mat_h0s))
       }
-
+      
       ###hazard function
       Z_i <- Z[i,]
       if(length(Z_i)==0){
@@ -463,28 +555,28 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
       else{
         pred_surv <- (alpha%*%Z_i)[1,1]
       }
-
+      
       pred_haz <- pred_haz + pred_surv
-
+      
       Cum_risk_1i <- c(Cum_risk_1i, P.sort.unique[j]*sum(exp(pred_haz)%*%h_0.GK))
-
+      
       if(FlexVarJM$control$competing_risk){
         if(FlexVarJM$control$variability_hetero){
-          pred_haz.CR <- alpha.sigma.CR*exp(pred.e.a$b[FlexVarJM$control$nb.e.a+1])
+          pred_haz.CR <- alpha.sigma.CR*Sigma.current.GK
         }
         else{
           pred_haz.CR <- 0
         }
-
+        
         if(FlexVarJM$control$sharedtype %in% c("CV","CVS")){
           pred_haz.CR <- pred_haz.CR + alpha.current.CR*current.GK
         }
-
+        
         if(FlexVarJM$control$sharedtype %in% c("CVS","S")){
           pred_haz.CR <- pred_haz.CR + alpha.slope.CR*slope.GK
         }
-
-
+        
+        
         if(FlexVarJM$control$hazard_baseline_CR == "Exponential"){
           h_0.GK.CR <- wk
         }
@@ -499,7 +591,7 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
           mat_h0s <- matrix(gamma.CR,ncol=1)
           h_0.GK.CR <- (wk*exp(Bs_j%*%mat_h0s))
         }
-
+        
         ###hazard function
         Z.CR_i <- Z_CR[i,]
         if(length(Z.CR_i)==0){
@@ -508,18 +600,18 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
         else{
           pred_surv.CR <- (alpha.CR%*%Z.CR_i)[1,1]
         }
-
+        
         pred_haz.CR <- pred_haz.CR + pred_surv.CR
-
+        
         Cum_risk_2i <- c(Cum_risk_2i, P.sort.unique[j]*sum(exp(pred_haz.CR)%*%h_0.GK.CR))
-
+        
       }
     }
-
+    
     Cum_risk1 <- rbind(Cum_risk1,Cum_risk_1i)
     Cum_risk2 <- rbind(Cum_risk2,Cum_risk_2i)
   }
-  result <- list(pred.e.a.table = pred.e.a.table,
+  result <- list(pred.r.e.table = pred.r.e.table,
                  pred.CV = pred.CV, Cum_risk1 = Cum_risk1, Cum_risk2 = Cum_risk2)
   graphs <- NULL
   if(graph){
@@ -528,8 +620,10 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times =NULL ){
     graphs <- plot.goodnessoffit(data.long,data.id,pred.CV,break.times, formFixed = FlexVarJM$control$formFixed, formSurv = FlexVarJM$control$formSurv,
                                  timeVar = FlexVarJM$control$timeVar,Cum_risk1, competing_risk = FlexVarJM$control$competing_risk, formSurv_CR = FlexVarJM$control$formSurv_CR, Cum_risk2)
   }
-
+  
   result.final <- list(tables = result,
                        graphs = graphs)
   result.final
 }
+
+

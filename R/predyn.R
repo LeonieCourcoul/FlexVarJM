@@ -17,8 +17,8 @@ predyn <- function(newdata, FlexVarJM, s, window =1, event = 1, L =500, graph = 
   bootstrap <- c()
   pred.ponct <- c()
   for( t in seq(0.1,window,0.1)){
-    pred.t <- pred_s.t.ponctuel(newdata,FlexVarJM,s,t,event)
-    pred.t.bootstrap <- pred_s.t.bootstrap(newdata,FlexVarJM,s,t,event,L)
+    pred.t <- pred_s.t.ponctuel.tps(newdata,FlexVarJM,s,t,event)
+    pred.t.bootstrap.tps <- pred_s.t.bootstrap(newdata,FlexVarJM,s,t,event,L)
     pred.ponct <- c(pred.ponct, pred.t)
     bootstrap<- cbind(bootstrap,pred.t.bootstrap)
   }
