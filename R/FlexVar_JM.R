@@ -99,7 +99,7 @@
 #' @param epsa optional threshold for the convergence criterion based on the parameter stability.
 #' @param epsb optional threshold for the convergence criterion based on the objective function stability.
 #' @param epsd optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whathever the problem.
-#' @param binit optional initials parameters.
+#' @param binit optional initials parameters
 #'
 #' @return A FlexVarJoint object which contains the following elements :
 #' \describe{
