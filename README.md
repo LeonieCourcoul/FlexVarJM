@@ -35,8 +35,6 @@ $$y_i(t_{ij}) = \color{blue}\tilde{y_i}(t_{ij}) \color{black} + \epsilon_{ij} = 
 
 $$ \lambda_{ik}(t) = \lambda_{0k}(t)\exp(\color{blue}\alpha_{1k}\tilde{y_i}(t) + \color{red}\alpha_{\sigma k} \sigma_i(t) \color{black}) $$
 
-$$\lambda_{ik}(t)=\lambda_{0k}(t) \exp(\color{blue}\alpha_{1k}\tilde{y}_i(t)\color{black} + \color{red}\alpha_{\sigma k} \sigma_i(t) \color{black})$$
-
 where :
 
 - $\epsilon_{i}(t_{ij}) \sim \mathcal{N}(0, \color{red}\sigma_i^2\color{black})$
@@ -46,6 +44,8 @@ where :
 - with $b_i=\left(b_{0i},b_{1i}\right)^{\top}$ and
   $\tau_i=\left(\tau_{0i},\tau_{1i}\right)^{\top}$ assuming that the two
   sets of random effects $b_i$ and $\tau_i$ are not independent:
+  $$\quad\left(\begin{array}{c} b_i \\ \tau_i \end{array}\rigth)$$
+
   $$\quad\left(\begin{array}{c}
   b_{i} \\
   \tau_i
