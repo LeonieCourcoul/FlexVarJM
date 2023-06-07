@@ -28,3 +28,7 @@ Depends:
 URL: https://github.com/LeonieCourcoul/FlexVarJM
 BugReports: https://github.com/LeonieCourcoul/FlexVarJM/issues
 LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

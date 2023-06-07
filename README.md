@@ -7,11 +7,12 @@
 <!-- badges: end -->
 
 The goal of VarJM is to estimate joint model with subject-specific
-variability.
+time-dependent variability.
 
 The global function is FlexVar_JM. It handles to estimate joint model
-with a marker which has a subject-specific variability and competing
-events with the possibility to take into account the left truncation.
+with a marker which has a subject-specific time-dependent variability
+and competing events with the possibility to take into account the left
+truncation.
 
 ## Installation
 
@@ -25,35 +26,47 @@ devtools::install_github("LeonieCourcoul/FlexVarJM")
 
 ## Exemple
 
+# Estimation
+
 This is an exemple in a simulated dataset. We estimated the following
 model with two competing events k=1 or k=2 :
 
-![\\left\\{
-\\begin{array}{ll}
-y_i(t\_{i j})= \\color{blue}\\tilde{y}\_i(t\_{ij}) \\color{black} + \\epsilon\_{ij} = \\beta_0 + b\_{0i} + (\\beta_1 + b\_{1i})t\_{ij}+\\epsilon\_{i j}\\\\
-\\lambda\_{ik}(t)=\\lambda\_{0k}(t) \\exp(\\color{blue}\\alpha\_{1k}\\tilde{y}\_i(t)\\color{black} + \\color{red}\\alpha\_{\\sigma k} \\sigma_i \\color{black})
-\\end{array}
-\\right.](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;%5Cleft%5C%7B%0A%5Cbegin%7Barray%7D%7Bll%7D%0Ay_i%28t_%7Bi%20j%7D%29%3D%20%5Ccolor%7Bblue%7D%5Ctilde%7By%7D_i%28t_%7Bij%7D%29%20%5Ccolor%7Bblack%7D%20%2B%20%5Cepsilon_%7Bij%7D%20%3D%20%5Cbeta_0%20%2B%20b_%7B0i%7D%20%2B%20%28%5Cbeta_1%20%2B%20b_%7B1i%7D%29t_%7Bij%7D%2B%5Cepsilon_%7Bi%20j%7D%5C%5C%0A%5Clambda_%7Bik%7D%28t%29%3D%5Clambda_%7B0k%7D%28t%29%20%5Cexp%28%5Ccolor%7Bblue%7D%5Calpha_%7B1k%7D%5Ctilde%7By%7D_i%28t%29%5Ccolor%7Bblack%7D%20%2B%20%5Ccolor%7Bred%7D%5Calpha_%7B%5Csigma%20k%7D%20%5Csigma_i%20%5Ccolor%7Bblack%7D%29%0A%5Cend%7Barray%7D%0A%5Cright. "\left\{
+$$\left\{
 \begin{array}{ll}
 y_i(t_{i j})= \color{blue}\tilde{y}_i(t_{ij}) \color{black} + \epsilon_{ij} = \beta_0 + b_{0i} + (\beta_1 + b_{1i})t_{ij}+\epsilon_{i j}\\
-\lambda_{ik}(t)=\lambda_{0k}(t) \exp(\color{blue}\alpha_{1k}\tilde{y}_i(t)\color{black} + \color{red}\alpha_{\sigma k} \sigma_i \color{black})
+\lambda_{ik}(t)=\lambda_{0k}(t) \exp(\color{blue}\alpha_{1k}\tilde{y}_i(t)\color{black} + \color{red}\alpha_{\sigma k} \sigma_i(t) \color{black})
 \end{array}
-\right.")
+\right.$$
 
 where :
 
--   ![\\epsilon\_{ij} \\sim \\mathcal{N}(0, \\color{red}\\sigma_i^2\\color{black})](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;%5Cepsilon_%7Bij%7D%20%5Csim%20%5Cmathcal%7BN%7D%280%2C%20%5Ccolor%7Bred%7D%5Csigma_i%5E2%5Ccolor%7Bblack%7D%29 "\epsilon_{ij} \sim \mathcal{N}(0, \color{red}\sigma_i^2\color{black})")
-    with
-    ![\\color{red}\\log(\\sigma_i) \\sim \\mathcal{N}(\\mu\_\\sigma, \\tau\_\\sigma^2)](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;%5Ccolor%7Bred%7D%5Clog%28%5Csigma_i%29%20%5Csim%20%5Cmathcal%7BN%7D%28%5Cmu_%5Csigma%2C%20%5Ctau_%5Csigma%5E2%29 "\color{red}\log(\sigma_i) \sim \mathcal{N}(\mu_\sigma, \tau_\sigma^2)")
+- $\epsilon_{i}(t_{ij}) \sim \mathcal{N}(0, \color{red}\sigma_i^2\color{black})$
+  with
+  $\color{red}\log(\sigma_i(t_{ij})) = \mu_0 + \tau_{0i} + (\mu_1 + \tau_{1i})\times t_{ij}$
 
--   ![b_i \\sim \\mathcal{N}(0, \\Sigma_b)](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;b_i%20%5Csim%20%5Cmathcal%7BN%7D%280%2C%20%5CSigma_b%29 "b_i \sim \mathcal{N}(0, \Sigma_b)")
-    with
-    ![\\begin{pmatrix} s\_{0} & 0\\\\ s\_{01} & s_1 \\end{pmatrix}](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;%5Cbegin%7Bpmatrix%7D%20s_%7B0%7D%20%26%200%5C%5C%20s_%7B01%7D%20%26%20s_1%20%5Cend%7Bpmatrix%7D "\begin{pmatrix} s_{0} & 0\\ s_{01} & s_1 \end{pmatrix}")
-    the decomposition cholesky of
-    ![\\Sigma_b](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;%5CSigma_b "\Sigma_b")
+- with $b_i=\left(b_{0i},b_{1i}\right)^{\top}$ and
+  $\tau_i=\left(\tau_{0i},\tau_{1i}\right)^{\top}$ assuming that the two
+  sets of random effects $b_i$ and $\tau_i$ are not independent:
+  $$\quad\left(\begin{array}{c}
+  b_{i} \\
+  \tau_i
+  \end{array}\right) \sim N(0, \Sigma)$$
 
--   ![\\lambda\_{0k}(t) = \\eta_k t^{\\eta_k-1}e^{\\zeta\_{0k}}](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;%5Clambda_%7B0k%7D%28t%29%20%3D%20%5Ceta_k%20t%5E%7B%5Ceta_k-1%7De%5E%7B%5Czeta_%7B0k%7D%7D "\lambda_{0k}(t) = \eta_k t^{\eta_k-1}e^{\zeta_{0k}}")
-    : Weibull function
+with the following Cholesky decomposition for the covariance matrix of
+the random effects: $$\Sigma = \left(\begin{array}{cccc}
+s_0 & 0 & 0 & 0  \\
+s_{01} & s_1 & 0 & 0 \\
+s_{02} & s_{12} & s_2 & 0 \\
+s_{03} & s_{13} & s_{23} & s_3 
+\end{array}\right)\left(\begin{array}{cccc}
+s_0 & 0 & 0 & 0  \\
+s_{01} & s_1 & 0 & 0 \\
+s_{02} & s_{12} & s_2 & 0 \\
+s_{03} & s_{13} & s_{23} & s_3 
+\end{array}\right)^\top = LL^\top$$
+
+- $\lambda_{0k}(t) = shape_k^2 t^{shape_k^2-1}e^{\zeta_{0k}}$ : Weibull
+  function
 
 ``` r
 exemple <- FlexVar_JM(formFixed = y~visit,
@@ -61,8 +74,7 @@ exemple <- FlexVar_JM(formFixed = y~visit,
                       formGroup = ~ID,
                       formSurv = Surv(time, event ==1 ) ~ 1,
                       timeVar = "visit",
-                      nb.e.a = 2,
-                      data.long = Data_exemple,
+                      data.long = Data_toy,
                       variability_hetero = TRUE,
                       sharedtype = "CV",
                       hazard_baseline = "Weibull",
@@ -70,10 +82,15 @@ exemple <- FlexVar_JM(formFixed = y~visit,
                       formSurv_CR = Surv(time, event ==2 ) ~ 1,
                       hazard_baseline_CR = "Weibull",
                       sharedtype_CR = "CV",
+                      formFixedVar =~visit, 
+                      formRandomVar =~visit,
+                      correlated_re = TRUE,
                       S1 = 1000,
                       S2 = 8000,
                       nproc = 5
                       )
+                      
+summary.FlexVarJM(exemple)
 ```
 
 You can access to the table of estimations and standard deviation with :
@@ -98,4 +115,43 @@ Finally, some elements of control are in :
 
 ``` r
 exemple$control
+```
+
+# Goodness-of-fit
+
+You can check the goodness-of-fit of the longitudinal submodel and of
+the survival submodel by computing the predicted random effects :
+
+``` r
+goodness <- goodness_of_fit(exemple, graph = T)
+```
+
+# Predictions
+
+You can compute the probability for a (new) individual to have event 1
+or 2 between time s and time S+t years given that he did not experience
+any event before time s, its trajectory of marker until time s ans the
+set of estimated parameters. For exemple, for the individual 15 to
+experiment the event 1 between 3 and 5 years :
+
+``` r
+newdata <- Data_toy[which(Data_toy$ID == 15),]
+predictions <- pred_s.t(newdata, exemple, s = 3, window = 1, event = 1, tirage = NULL)
+```
+
+To have a confidence interval, you can compute the predictions L times
+(for exemple L = 500) by drawing the parameter in the normal
+distribution of parameter the estimates and the covariance matrix. Then
+you can take the 2.5th and 97.5th percentiles of the predictions :
+
+``` r
+  Hess <- matrix(rep(0,length(exemple$result$grad)**2),nrow=length(exemple$result$grad),ncol=length(exemple$result$grad))
+  Hess[upper.tri(Hess, diag=T)] <- exemple$result$v
+  Hess2 = Hess + t(Hess)
+  diag(Hess2) <- diag(Hess2) - diag(Hess)
+  predictions.boot <- c()
+  for(k in 1:500){
+    tirage <- rmvnorm(1, mean = estimation$table.res$Estimation, sigma = Hess2)
+    predictions.boot <- c(predictions.boot, pred_s.t.ponctuel.tps(newdata = newdata, estimation, s = 3, window = 2, event = 1, tirage = tirage))
+  }
 ```

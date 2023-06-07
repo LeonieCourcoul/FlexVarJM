@@ -159,4 +159,3 @@ by drawing the parameter in the normal distribution of parameter the estimates a
   }
 
 ```
-
