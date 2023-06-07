@@ -44,25 +44,7 @@ where :
 - with $b_i=\left(b_{0i},b_{1i}\right)^{\top}$ and
   $\tau_i=\left(\tau_{0i},\tau_{1i}\right)^{\top}$ assuming that the two
   sets of random effects $b_i$ and $\tau_i$ are not independent:
-  $$\quad\left(\begin{array}{c} b_i \\ \tau_i \end{array}\rigth)$$
-
-  $$\quad\left(\begin{array}{c}
-  b_{i} \\
-  \tau_i
-  \end{array}\right) \sim N(0, \Sigma)$$
-
-with the following Cholesky decomposition for the covariance matrix of
-the random effects: $$\Sigma = \left(\begin{array}{cccc}
-s_0 & 0 & 0 & 0  \\
-s_{01} & s_1 & 0 & 0 \\
-s_{02} & s_{12} & s_2 & 0 \\
-s_{03} & s_{13} & s_{23} & s_3 
-\end{array}\right)\left(\begin{array}{cccc}
-s_0 & 0 & 0 & 0  \\
-s_{01} & s_1 & 0 & 0 \\
-s_{02} & s_{12} & s_2 & 0 \\
-s_{03} & s_{13} & s_{23} & s_3 
-\end{array}\right)^\top = LL^\top$$
+  $$(b_i, \tau_i)^\top \sim N(0, \Sigma)$$
 
 - $\lambda_{0k}(t) = shape_k^2 t^{shape_k^2-1}e^{\zeta_{0k}}$ : Weibull
   function
