@@ -31,12 +31,14 @@ devtools::install_github("LeonieCourcoul/FlexVarJM")
 This is an exemple in a simulated dataset. We estimated the following
 model with two competing events k=1 or k=2 :
 
-$$\left\{
+$$jj$$
+
+$$ \left\{
 \begin{array}{ll}
 y_i(t_{i j})= \color{blue}\tilde{y}_i(t_{ij}) \color{black} + \epsilon_{ij} = \beta_0 + b_{0i} + (\beta_1 + b_{1i})t_{ij}+\epsilon_{i j}\\
 \lambda_{ik}(t)=\lambda_{0k}(t) \exp(\color{blue}\alpha_{1k}\tilde{y}_i(t)\color{black} + \color{red}\alpha_{\sigma k} \sigma_i(t) \color{black})
 \end{array}
-\right.$$
+\right. $$
 
 where :
 
