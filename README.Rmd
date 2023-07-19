@@ -63,9 +63,7 @@ where :
     two sets of random effects $b_i$ and $\tau_i$ are not independent:
     $$(b_i, \tau_i)^\top \sim N(0, \Sigma)$$ 
     
-    
-
--   $\lambda_{0k}(t) = shape_k^2 t^{shape_k^2-1}e^{\zeta_{0k}}$ :
+  - $\lambda_{0k}(t) = shape_k^2 t^{shape_k^2-1}e^{\zeta_{0k}}$ :
     Weibull function
 
 ``` r

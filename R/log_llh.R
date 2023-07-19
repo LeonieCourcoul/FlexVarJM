@@ -203,10 +203,14 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
   }
   
   #Manage random effects
+  #browser()
   random.effects <- Zq%*%t(MatCov)
   b_al <- random.effects[,1:nb.e.a]
+  b_al <- matrix(b_al, ncol = nb.e.a)
+ # browser()
   if(variability_hetero){
     b_om <- random.effects[,(nb.e.a+1):(nb.e.a+nb.e.a.sigma)]
+    b_om <- matrix(b_om, ncol = nb.e.a.sigma)
   }
   ll_glob <- 0
   
@@ -217,15 +221,23 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     etaBaseline.0 <- 0
     survLong.0 <- 0
     if(variability_hetero){
+      #browser()
       Otime_i <- Otime[i,]
       Wtime_i <- Wtime[i,]
       Os_i <- Os[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
       Ws_i <- Ws[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+      #if(length(Wtime_i)==1){
+      #  Sigma.CV <- exp((omega%*%Otime_i)[1,1]+b_om*Wtime_i)
+      #}
+      #else{
+      #  Sigma.CV <- exp((omega%*%Otime_i)[1,1]+b_om%*%Wtime_i)
+      #}
       Sigma.CV <- exp((omega%*%Otime_i)[1,1]+b_om%*%Wtime_i)
       Sigma.current.GK <- exp(matrix(rep(omega%*%t(Os_i),S),nrow=S,byrow = T) + b_om%*%t(Ws_i))
       h <- h*exp(alpha.sigma*Sigma.CV)
       survLong <- survLong + alpha.sigma*Sigma.current.GK
     }
+    
     if(competing_risk){
       h_CR <- 1
       etaBaseline_CR <- 0
@@ -452,6 +464,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     U_i <- U[offset[i]:(offset[i+1]-1),]
     U_i <- matrix(U_i, nrow = offset[i+1]-offset[i])
     y_i <- y.new.prog[offset[i]:(offset[i+1]-1)]
+   # browser()
     if(is.null(nrow(X_base_i))){
       if(variability_hetero){
         sigma.long <- exp((omega%*%O_base_i)[1,1] + b_om%*%W_base_i)
