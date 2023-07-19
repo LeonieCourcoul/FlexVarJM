@@ -33,7 +33,7 @@ plot.goodnessoffit<-function(data.long,data.id,pred.CV,break.times, formFixed, f
   Cum.pred1 <- as.data.frame(Cum.pred1)
   Cum.pred1.sort <- arrange(Cum.pred1, V2)
   Surv.fit1 <- survminer::surv_fit(formSurv, data = C1.sort)
-  graph.surv.1 <- survminer::ggsurvplot(Surv.fit1, data = C1.sort, fun = "cumhaz", palette = "darkgrey",
+  graph.surv.1 <- survminer::ggsurvplot(Surv.fit1, data = C1.sort, fun = "cumhaz", 
                              conf.int.style = "step", legend = "none", xlab = "Time")$plot +
     ggplot2::geom_line(ggplot2::aes(V2,Cum.pred1),
               data = Cum.pred1.sort,
@@ -49,7 +49,7 @@ plot.goodnessoffit<-function(data.long,data.id,pred.CV,break.times, formFixed, f
     Cum.pred2 <- as.data.frame(Cum.pred2)
     Cum.pred2.sort <- arrange(Cum.pred2, V2)
     Surv.fit2 <- survminer::surv_fit(formSurv_CR, data = C2.sort)
-    graph.surv.2 <- survminer::ggsurvplot(Surv.fit2, data = C2.sort, fun = "cumhaz", palette = "darkgrey",
+    graph.surv.2 <- survminer::ggsurvplot(Surv.fit2, data = C2.sort, fun = "cumhaz",
                                conf.int.style = "step", legend = "none", xlab = "Time")$plot +
       ggplot2::geom_line(ggplot2::aes(V2,Cum.pred2),
                 data = Cum.pred2.sort,

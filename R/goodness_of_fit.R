@@ -479,10 +479,10 @@ goodness_of_fit <- function(FlexVarJM, graph = F, break.times = NULL){
       Var <- O_base_i%*%omega + W_base_i%*%pred.r.e$b[(FlexVarJM$control$nb.e.a+1):(FlexVarJM$control$nb.e.a+FlexVarJM$control$nb.e.a.sigma)]
     }
     if(FlexVarJM$control$variability_hetero){
-      pred.CV <- rbind(pred.CV,cbind(rep(data.id$ID[i],length(CV)), CV,Var,X_base[,2]))
+      pred.CV <- rbind(pred.CV,cbind(rep(data.id$ID[i],length(CV)), CV,Var,X_base_i[,2]))
     }
     else{
-      pred.CV <- rbind(pred.CV,cbind(rep(data.id$ID[i],length(CV)), CV,X_base[,2]))
+      pred.CV <- rbind(pred.CV,cbind(rep(data.id$ID[i],length(CV)), CV,X_base_i[,2]))
     }
     
     ### Survival goodness-of-fit

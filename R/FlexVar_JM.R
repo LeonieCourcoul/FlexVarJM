@@ -260,6 +260,8 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
   Os <- NULL
   Ws <- NULL
   W_base <- NULL
+  Ws.0 <- NULL
+  Os.0 <- NULL
   
   
   #data management
@@ -521,7 +523,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
           B.CR <- splineDesign(rr.CR, Time, ord = 4L)
           Bs.CR <- splineDesign(rr.CR, c(t(st_calc)), ord = 4L)
           opt_splines_CR <- optim(rep(0,ncol(B)), fn2,event = event2,W2 = B.CR,P = P,wk = wk,Time = Time,W2s = Bs.CR,id.GK = id.GK, method="BFGS", hessian = T)
-          tmp_model <- coxph(formSurv_CR,
+          tmp_model <- coxph(formSurv_dep_CR,
                              data = data.id,
                              x = TRUE)
           if(length(tmp_model$coefficients) == 2){
@@ -557,6 +559,13 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
     Wtime <- list.data.current.sigma.time$Utime
     Os <- list.data.GK.current.sigma$Xtime
     Ws <- list.data.GK.current.sigma$Utime
+    
+    if(left_trunc){
+      list.data.GK.current.0 <- data.time(list.GaussKronrod.0$data.id2, c(t(list.GaussKronrod.0$st)),
+                                          formFixedVar, formRandomVar,timeVar)
+      Os.0 <- list.data.GK.current.0$Xtime
+      Ws.0 <- list.data.GK.current.0$Utime
+    }
   }
   
   #browser()
@@ -645,7 +654,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
     ## Effets fixes var :
     if(variability_hetero){
       binit <- c(binit,mu.log.sigma,rep(0,nb.omega-1))
-      names_param <- c(names_param, paste(colnames(W_base),"Var",sep = "_"))
+      names_param <- c(names_param, paste(colnames(O_base),"Var",sep = "_"))
     }
     else{
       binit <- c(binit, sigma_epsilon)
@@ -694,6 +703,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
   else{
     Zq <- randtoolbox::sobol(S1, dim = nb.e.a, mixed = TRUE, normal = TRUE)
   }
+  print(names_param)
   nb.priorMean.beta = length(priorMean.beta)
   nb.alpha = length(alpha)
   cat("First estimation  \n")
@@ -713,7 +723,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
                            
                            nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                            Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
-                           
+                           Os.0 = Os.0, Ws.0 = Ws.0,
                            
                            nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info,
                            file = file, blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
@@ -740,7 +750,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
                             
                             nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                             Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
-                            
+                            Os.0 = Os.0, Ws.0 = Ws.0,
                             
                             nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info, file = file,
                             blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)

@@ -62,7 +62,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
                     st_calc, B, Bs, wk, Z, P, left_trunc, Z_CR, X_base, offset, U, y.new.prog, event1, event2, Ind,
                     Xs.0, Us.0, Xs.slope.0, Us.slope.0, P.0, st.0,Bs.0,B.CR, Bs.CR, Bs.0.CR,
                     nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
-                    Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re
+                    Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re, Os.0 = Os.0, Ws.0 = Ws.0
 ){
   #Manage parameters
   curseur <- 1
@@ -236,6 +236,12 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       Sigma.current.GK <- exp(matrix(rep(omega%*%t(Os_i),S),nrow=S,byrow = T) + b_om%*%t(Ws_i))
       h <- h*exp(alpha.sigma*Sigma.CV)
       survLong <- survLong + alpha.sigma*Sigma.current.GK
+      if(left_trunc){
+        Os.0_i <- Os[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+        Ws.0_i <- Ws[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+        Sigma.current.GK.0 <- exp(matrix(rep(omega%*%t(Os.0_i),S),nrow=S,byrow = T) + b_om%*%t(Ws.0_i))
+        survLong.0 <- survLong.0 + alpha.sigma*Sigma.current.GK.0
+      }
     }
     
     if(competing_risk){
@@ -247,6 +253,9 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       if(variability_hetero){
         h_CR <- h_CR*exp(alpha.sigma.CR*Sigma.CV)
         survLong_CR <- survLong_CR + alpha.sigma.CR*Sigma.current.GK
+        if(left_trunc){
+          survLong.0_CR <- survLong.0_CR + alpha.sigma.CR*Sigma.current.GK.0
+        }
       }
     }
     if(sharedtype %in% c("CV","CVS") || (competing_risk && sharedtype_CR %in% c("CV","CVS")) ){
@@ -332,12 +341,13 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       #}
       if(left_trunc){
         st.0_i <- st.0[i,]
-        if(scaleWeibull == "square"){
-          h_0.GK <- alpha_weib*shape*((alpha_weib*st.0_i)**(shape-1))*wk
-        }
-        else{
-          h_0.GK <- alpha_weib*shape*((st.0_i)**(shape-1))*wk
-        }
+        # if(scaleWeibull == "square"){
+        #   h_0.GK <- alpha_weib*shape*((alpha_weib*st.0_i)**(shape-1))*wk
+        # }
+        # else{
+        #   h_0.GK <- alpha_weib*shape*((st.0_i)**(shape-1))*wk
+        # }
+        h_0.GK.0 <- shape*(st.0_i**(shape-1))*wk
       }
     }
     if(hazard_baseline == "Splines"){
@@ -405,12 +415,13 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
         #}
         if(left_trunc){
           st.0_i <- st.0[i,]
-          if(scaleWeibull == "square"){
-            h_0.GK_CR <- alpha_weib.CR*shape.CR*((alpha_weib.CR*st.0_i)**(shape.CR-1))*wk
-          }
-          else{
-            h_0.GK_CR <- alpha_weib.CR*shape.CR*((st.0_i)**(shape.CR-1))*wk
-          }
+          # if(scaleWeibull == "square"){
+          #  h_0.GK_CR <- alpha_weib.CR*shape.CR*((alpha_weib.CR*st.0_i)**(shape.CR-1))*wk
+          #}
+          #else{
+          # h_0.GK_CR <- alpha_weib.CR*shape.CR*((st.0_i)**(shape.CR-1))*wk
+          #}
+          h_0.GK.0_CR <- shape.CR*(st.0_i**(shape.CR-1))*wk
         }
       }
       if(hazard_baseline_CR == "Splines"){
