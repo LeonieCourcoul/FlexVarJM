@@ -12,7 +12,6 @@
 #' \item{\code{Utime}}{a matrix of random effects at each time of measure}
 #' }
 #' @importFrom stats model.frame model.matrix
-#' @export
 #'
 #' @examples
 #'

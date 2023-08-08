@@ -1,9 +1,9 @@
 #' @export
 
-summary.FlexVarJM <- function(object,...)
+summary.lsjm <- function(object,...)
 {
   x <- object
-  if(!inherits(x, "FlexVar_JM")) stop("use only \"FlexVarJM\" objects")
+  if(!inherits(x, "lsjm")) stop("use only \"lsjm\" objects")
 
   cat("Joint model for quantitative outcome and competing risks", "\n")
   cat("with heterogenous variability and fitted by maximum likelihood method", "\n")
@@ -29,7 +29,7 @@ summary.FlexVarJM <- function(object,...)
     cat(paste("     Convergence criteria: parameters =" ,signif(x$control$convcrit[1],3)), "\n")
     cat(paste("                         : likelihood =" ,signif(x$control$convcrit[2],3)), "\n")
     cat(paste("                         : second derivatives =" ,signif(x$control$convcrit[3],3)), "\n")
-    cat(paste("     Time of computation :" ,round(x$time.compute,3)))
+    cat(paste("     Time of computation :" ,format(x$time.compute)))
   }
 
   cat("\n")
@@ -37,6 +37,7 @@ summary.FlexVarJM <- function(object,...)
   cat("Goodness-of-fit statistics:")
   cat("\n")
   cat(paste("    Likelihood: ", x$control$likelihood_value),"\n")
+  cat(paste("    AIC: ", 2*nrow(x$table.res) - 2* x$control$likelihood_value),"\n")
 
   cat("\n")
   cat("Maximum Likelihood Estimates:")
@@ -218,16 +219,7 @@ summary.FlexVarJM <- function(object,...)
   cat("\n")
   cat("Longitudinal model:")
   cat("\n")
-  cat("     Cholesky matrix of the random effects:")
-  cat("\n")
-
-  #chol_mat <- x$table.res$Estimation[grep("^chol", rownames(x$table.res))]
-  #chol_mat2 <- matrix(0,nrow = quad(1,1,-2*length(chol_mat)), ncol =  quad(1,1,-2*length(chol_mat)) )
-  #chol_mat2[lower.tri(chol_mat2, diag=T)] <- chol_mat
-  #print(chol_mat2,quote=FALSE,na.print="")
-  print(MatCov,quote=FALSE,na.print="")
   
-  cat("\n")
   cat("      Fixed effects:")
 
  # betas_tab <- x$table.res[grep("^beta", rownames(x$table.res)),]
@@ -251,7 +243,7 @@ summary.FlexVarJM <- function(object,...)
 
   if(x$control$variability_hetero){
     cat("\n")
-    cat("     Variability:")
+    cat("     Fixed effects of the linear predictor associated with variability:")
     var_tab <- matrix(nrow = length(omega), ncol = 4)
     var_tab[,1] <- omega
     var_tab[,2] <- omega.se
@@ -278,6 +270,17 @@ summary.FlexVarJM <- function(object,...)
   }
   
 
+  cat("\n")
+  
+  cat("     Covariance matrix of the random effects:")
+  cat("\n")
+  
+  #chol_mat <- x$table.res$Estimation[grep("^chol", rownames(x$table.res))]
+  #chol_mat2 <- matrix(0,nrow = quad(1,1,-2*length(chol_mat)), ncol =  quad(1,1,-2*length(chol_mat)) )
+  #chol_mat2[lower.tri(chol_mat2, diag=T)] <- chol_mat
+  #print(chol_mat2,quote=FALSE,na.print="")
+  print(MatCov%*%t(MatCov),quote=FALSE,na.print="")
+  
   cat("\n")
 
   cat("Survival model(s):")
@@ -328,21 +331,30 @@ summary.FlexVarJM <- function(object,...)
     e1_alpha_tab[,2] <- alpha.se
     e1_alpha_tab[,3] <- e1_alpha_tab[,1]/e1_alpha_tab[,2]
     e1_alpha_tab[,4] <- 1 - pchisq(e1_alpha_tab[,3]**2,1)
-    e1_names_tab <- c(e1_names_tab, alpha.name)
+    #e1_names_tab <- c(e1_names_tab, alpha.name)
   }
   
-  e1_surv_tab <- rbind(e1_var_tab, e1_share_tab, e1_alpha_tab)
-  rownames(e1_surv_tab) <- e1_names_tab
-  colnames(e1_surv_tab) <- c("Coeff", "SE", "Wald", "P-value")
+  
   
   e1_bas_tab <- NULL
-  if(x$control$hazard_baseline == "Weibull"){
+  if(x$control$hazard_baseline == "Exponential"){
     e1_bas_tab <- matrix(nrow = 1, ncol = 4)
-    e1_bas_tab[,1] <- shape
-    e1_bas_tab[,2] <- shape.se
-    e1_bas_tab[,3] <- e1_bas_tab[,1]/e1_bas_tab[,2]
-    e1_bas_tab[,4] <- 1 - pchisq(e1_bas_tab[,3]**2,1)
-    rownames(e1_bas_tab) <- shape.name
+    e1_bas_tab[1,] <- e1_alpha_tab[1,]
+    e1_alpha_tab <- e1_alpha_tab[-1,]
+    e1_names_tab <- c(e1_names_tab, alpha.name[-1])
+    rownames(e1_bas_tab) <- c("intercept")
+    colnames(e1_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
+  }
+  if(x$control$hazard_baseline == "Weibull"){
+    e1_bas_tab <- matrix(nrow = 2, ncol = 4)
+    e1_bas_tab[1,] <- e1_alpha_tab[1,]
+    e1_alpha_tab <- e1_alpha_tab[-1,]
+    e1_names_tab <- c(e1_names_tab, alpha.name[-1])
+    e1_bas_tab[2,1] <- shape
+    e1_bas_tab[2,2] <- shape.se
+    e1_bas_tab[2,3] <- e1_bas_tab[2,1]/e1_bas_tab[2,2]
+    e1_bas_tab[2,4] <- 1 - pchisq(e1_bas_tab[2,3]**2,1)
+    rownames(e1_bas_tab) <- c("intercept",shape.name)
     colnames(e1_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
   }
   if(x$control$hazard_baseline == "Splines"){
@@ -354,17 +366,20 @@ summary.FlexVarJM <- function(object,...)
     rownames(e1_bas_tab) <- gamma.name
     colnames(e1_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
   }
+  e1_surv_tab <- rbind(e1_var_tab, e1_share_tab, e1_alpha_tab)
+  rownames(e1_surv_tab) <- e1_names_tab
+  colnames(e1_surv_tab) <- c("Coeff", "SE", "Wald", "P-value")
   
   if(nrow(e1_bas_tab)!=0){
     cat("\n")
-    cat("       Baseline:")
+    cat("       Regression:")
     cat("\n")
-    print(e1_bas_tab)
+    print(e1_surv_tab)
   }
   cat("\n")
-  cat("        Regression:")
+  cat(paste("     Baseline: ",x$control$hazard_baseline), "\n")
   cat("\n")
-  print(e1_surv_tab)
+  print(e1_bas_tab)
 
   cat("\n")
 
@@ -415,21 +430,29 @@ summary.FlexVarJM <- function(object,...)
       e2_alpha_tab[,2] <- alpha.CR.se
       e2_alpha_tab[,3] <- e2_alpha_tab[,1]/e2_alpha_tab[,2]
       e2_alpha_tab[,4] <- 1 - pchisq(e2_alpha_tab[,3]**2,1)
-      e2_names_tab <- c(e2_names_tab, alpha.CR.name)
     }
     
-    e2_surv_tab <- rbind(e2_var_tab, e2_share_tab, e2_alpha_tab)
-    rownames(e2_surv_tab) <- e2_names_tab
-    colnames(e2_surv_tab) <- c("Coeff", "SE", "Wald", "P-value")
+    
     
     e2_bas_tab <- NULL
-    if(x$control$hazard_baseline_CR == "Weibull"){
+    if(x$control$hazard_baseline_CR == "Exponential"){
       e2_bas_tab <- matrix(nrow = 1, ncol = 4)
-      e2_bas_tab[,1] <- shape.CR
-      e2_bas_tab[,2] <- shape.CR.se
-      e2_bas_tab[,3] <- e2_bas_tab[,1]/e2_bas_tab[,2]
-      e2_bas_tab[,4] <- 1 - pchisq(e2_bas_tab[,3]**2,1)
-      rownames(e2_bas_tab) <- shape.CR.name
+      e2_bas_tab[1,] <- e2_alpha_tab[1,]
+      e2_alpha_tab <- e2_alpha_tab[-1,]
+      e2_names_tab <- c(e2_names_tab, alpha.CR.name[-1])
+      rownames(e2_bas_tab) <- c("intercept")
+      colnames(e2_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
+    }
+    if(x$control$hazard_baseline_CR == "Weibull"){
+      e2_bas_tab <- matrix(nrow = 2, ncol = 4)
+      e2_bas_tab[1,] <- e2_alpha_tab[1,]
+      e2_alpha_tab <- e2_alpha_tab[-1,]
+      e2_names_tab <- c(e2_names_tab, alpha.CR.name[-1])
+      e2_bas_tab[2,1] <- shape.CR
+      e2_bas_tab[2,2] <- shape.CR.se
+      e2_bas_tab[2,3] <- e2_bas_tab[2,1]/e2_bas_tab[2,2]
+      e2_bas_tab[2,4] <- 1 - pchisq(e2_bas_tab[2,3]**2,1)
+      rownames(e2_bas_tab) <- c("intercept",shape.CR.name)
       colnames(e2_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
     }
     if(x$control$hazard_baseline_CR == "Splines"){
@@ -442,16 +465,20 @@ summary.FlexVarJM <- function(object,...)
       colnames(e2_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
     }
     
+    e2_surv_tab <- rbind(e2_var_tab, e2_share_tab, e2_alpha_tab)
+    rownames(e2_surv_tab) <- e2_names_tab
+    colnames(e2_surv_tab) <- c("Coeff", "SE", "Wald", "P-value")
+    
     if(nrow(e2_bas_tab)!=0){
       cat("\n")
-      cat("       Baseline:")
+      cat("       Regression:")
       cat("\n")
-      print(e2_bas_tab)
+      print(e2_surv_tab)
     }
     cat("\n")
-    cat("        Regression:")
+    cat(paste("     Baseline: ",x$control$hazard_baseline_CR), "\n")
     cat("\n")
-    print(e2_surv_tab)
+    print(e2_bas_tab)
     
     cat("\n")
     

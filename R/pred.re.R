@@ -43,22 +43,21 @@
 #' @param event2_i
 #'
 #' @return
-#' @export
 #'
 #' @examples
 #'
 
 
-predict_re <- function(param, nb.e.a = NULL, variability_hetero = NULL, nb.e.a.sigma = NULL,
-                           Sigma.re = NULL, X_base_i = NULL, U_i = NULL, beta = NULL, omega = NULL, O_base_i = NULL,
-                           W_base_i = NULL, y_i = NULL, sigma.epsilon = NULL, Otime_i = NULL, Wtime_i = NULL,
-                           Os_i = NULL, Ws_i = NULL, S = NULL, alpha.sigma = NULL, competing_risk = NULL, alpha.sigma.CR = NULL,
-                           sharedtype = NULL, sharedtype_CR = NULL, alpha.current = NULL, alpha.current.CR = NULL,
-                           alpha.slope = NULL, alpha.slope.CR = NULL, Xtime_i = NULL, Utime_i = NULL, Xs_i = NULL, Us_i = NULL,
-                           indices_beta_slope = NULL, hazard_baseline = NULL, wk = NULL, st_i = NULL, gamma = NULL, B_i = NULL, Bs_i = NULL,
-                           Z_i = NULL, alpha = NULL, shape = NULL, Time_i = NULL, P_i = NULL, hazard_baseline_CR = NULL, gamma.CR = NULL, B.CR_i = NULL,
-                           Bs.CR_i = NULL, Z.CR_i = NULL, alpha.CR = NULL, shape.CR = NULL, event1_i = NULL, event2_i = NULL, Xs.slope_i = NULL, Us.slope_i = NULL,
-                           Xslope_i = NULL, Uslope_i = NULL
+pred.re <- function(param, nb.e.a = NULL, variability_hetero = NULL, nb.e.a.sigma = NULL,
+                       Sigma.re = NULL, X_base_i = NULL, U_i = NULL, beta = NULL, omega = NULL, O_base_i = NULL,
+                       W_base_i = NULL, y_i = NULL, sigma.epsilon = NULL, Otime_i = NULL, Wtime_i = NULL,
+                       Os_i = NULL, Ws_i = NULL, S = NULL, alpha.sigma = NULL, competing_risk = NULL, alpha.sigma.CR = NULL,
+                       sharedtype = NULL, sharedtype_CR = NULL, alpha.current = NULL, alpha.current.CR = NULL,
+                       alpha.slope = NULL, alpha.slope.CR = NULL, Xtime_i = NULL, Utime_i = NULL, Xs_i = NULL, Us_i = NULL,
+                       indices_beta_slope = NULL, hazard_baseline = NULL, wk = NULL, st_i = NULL, gamma = NULL, B_i = NULL, Bs_i = NULL,
+                       Z_i = NULL, alpha = NULL, shape = NULL, Time_i = NULL, P_i = NULL, hazard_baseline_CR = NULL, gamma.CR = NULL, B.CR_i = NULL,
+                       Bs.CR_i = NULL, Z.CR_i = NULL, alpha.CR = NULL, shape.CR = NULL, event1_i = NULL, event2_i = NULL, Xs.slope_i = NULL, Us.slope_i = NULL,
+                       Xslope_i = NULL, Uslope_i = NULL
 ){
   
   b_re <- param[1:nb.e.a]

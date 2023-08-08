@@ -7,7 +7,6 @@
 #' \item{\code{sk}}{A k-vector of nodes}
 #' \item{\code{wk}}{A k-vector of weights}
 #' }
-#' @export
 #'
 #' @examples
 gaussKronrod <-

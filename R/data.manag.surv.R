@@ -17,7 +17,6 @@
 #' }
 #' @import stats
 #' @import survival
-#' @export
 #'
 #' @examples
 data.manag.surv <- function(formGroup, formSurv, data.long1,formSurv_CompRisk){

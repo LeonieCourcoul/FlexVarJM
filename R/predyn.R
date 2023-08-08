@@ -9,7 +9,6 @@
 #' @param graph
 #'
 #' @return
-#' @export
 #'
 #' @examples
 
@@ -42,13 +41,13 @@ predyn <- function(newdata, FlexVarJM, s, window =1, event = 1, L =500, graph = 
     plot(x = x.axe, y = y.axe,xlim = c(0,s+window),
         xlab = "Time", ylab = "Marker", cex.lab = 1, col = "black",
          main = "Prediction of event", pch = 20, cex = 1, font = 1, font.lab = 1, cex.lab = 1, cex.main = 1)
-      par(new = TRUE, font = 1, cex.lab = 1)
+    graphics::par(new = TRUE, font = 1, cex.lab = 1)
       plot(x.axe, y.axe3, axes = FALSE,col = "black", type = "l", ylim = c(0.000001, max(table.pred$ICsup, na.rm = T)),ylab = "", xlab = "", lwd =2, font.lab = 1, cex.lab = 1 )
-      lines(x.axe, y.axe2, col = "black", lty=2, lwd = 2)
-      lines(x.axe, y.axe4, col = "black", lty=2, lwd = 2)
-      axis(side= 4, cex = 2)
-      abline(v = s, lty = 3)
-      mtext("Probability of event", cex = 1, side = 4, line = 3, font.lab = 1)
+      graphics::lines(x.axe, y.axe2, col = "black", lty=2, lwd = 2)
+      graphics::lines(x.axe, y.axe4, col = "black", lty=2, lwd = 2)
+      graphics::axis(side= 4, cex = 2)
+      graphics::abline(v = s, lty = 3)
+      graphics::mtext("Probability of event", cex = 1, side = 4, line = 3, font.lab = 1)
 
   }
 

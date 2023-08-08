@@ -4,17 +4,15 @@
 \alias{goodness_of_fit}
 \title{Predictions for the goodness of fit, of the random effects, the current value for each individuals and the cumulative hazard function for both events}
 \usage{
-goodness_of_fit(FlexVarJM, graph = F, break.times = NULL)
+goodness_of_fit(object, graph = F, break.times = NULL)
 }
 \arguments{
-\item{FlexVarJM}{an object of class FlexVarJM}
-}
-\value{
+\item{object}{an object of class lsjm}
 
+\item{graph}{a boolean to indicate to print graphics, False by default}
+
+\item{break.times}{a vector of times for the time points of longitudinal graphic}
 }
 \description{
 Predictions for the goodness of fit, of the random effects, the current value for each individuals and the cumulative hazard function for both events
-}
-\examples{
-
 }

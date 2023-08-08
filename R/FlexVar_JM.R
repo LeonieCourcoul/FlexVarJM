@@ -55,7 +55,7 @@
 #'
 #' B. SURVIVAL SUBMODEL
 #' 
-#' The risk function for the event $k \in \{1,2\}$ is defined by:
+#' The risk function for the event $k = \{1,2\}$ is defined by:
 #' \eqn{\lambda_{ik}(t)=\lambda_{0k}(t) \exp \left(W_{i}^{\top} \gamma_{k}+\alpha_{1k}\tilde{y}_i(t)+\\
 #' \alpha_{2k}\tilde{y}'_i(t)+ \alpha_{\sigma k} \sigma_i(t) \right)}
 #' 
@@ -100,6 +100,7 @@
 #' @param epsb optional threshold for the convergence criterion based on the objective function stability.
 #' @param epsd optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whathever the problem.
 #' @param binit optional initials parameters.
+#' @param Comp.Rcpp bool to indicate if the computation is performed with RCPP program or R program. True by default.
 #'
 #' @return A FlexVarJoint object which contains the following elements :
 #' \describe{
@@ -114,14 +115,13 @@
 #' @import marqLevAlg
 #' @importFrom survival Surv
 #' @importFrom randtoolbox sobol
-#' @export
 #'
 #' @examples
 #'
 #' \dontrun{
 #'
 #' #fit a joint model with competing risks and subaject-specific variability
-#' exemple <- FlexVar_JM(formFixed = y~visit,
+#' example <- FlexVar_JM(formFixed = y~visit,
 #' formRandom = ~ visit,
 #' formGroup = ~ID,
 #' formSurv = Surv(time, event ==1 ) ~ 1,
@@ -142,10 +142,10 @@
 #' nproc = 5
 #' )
 #' 
-#' summary.FlexVarJM(exemple)
+#' summary.FlexVarJM(example)
 #' 
 #' #Predictions for the goodness-of-fit :
-#' goodness <- goodness_of_fit(exemple, graph = T)
+#' goodness <- goodness_of_fit(example, graph = T)
 #'
 #' #Predictions for a (new) individual to have event 1 between time
 #' s = 3 and time S+t = 4 years given that he did not experience any event
@@ -153,19 +153,19 @@
 #' of estimated parameters :
 #'
 #' newdata <- Data_toy[which(Data_toy$ID == 15),]
-#' predictions <- pred_s.t(newdata, exemple, s = 3, window = 1, event = 1, tirage = NULL)
+#' predictions <- pred_s.t(newdata, example, s = 3, window = 1, event = 1, tirage = NULL)
 #'
 #'
 #'
 #' }
 #'
-FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
+lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                        variability_hetero = TRUE, formFixedVar, formRandomVar, correlated_re = FALSE, sharedtype = "CV", hazard_baseline = "Exponential",
                        formSlopeFixed = NULL, formSlopeRandom = NULL, indices_beta_slope = NULL,
                        nb_pointsGK = 15, ord.splines = 3, competing_risk = FALSE, formSurv_CR = NULL,
                        hazard_baseline_CR = "Exponential", sharedtype_CR = "CV", left_trunc = FALSE,
                        Time.0 = NULL, S1 = 1000, S2= 5000, nproc = 1, clustertype = "SOCK", maxiter = 100,
-                       print.info = FALSE, file = NULL, epsa = 1e-03, epsb = 1e-03, epsd = 1e-03, binit = NULL
+                       print.info = FALSE, file = NULL, epsa = 1e-03, epsb = 1e-03, epsd = 1e-03, binit = NULL, Comp.Rcpp = TRUE
                        
 ){
   time.prog1 <- Sys.time()
@@ -274,7 +274,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
   idVar = "id"
   
   ##longitudinal part
-  cat("Longitudinal management \n")
+  #cat("Longitudinal management \n")
   list.long <- data.manag.long(formGroup,formFixed, formRandom,data.long)
   X_base <- list.long$X
   U <- list.long$U
@@ -305,7 +305,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
   
   
   ## survival part
-  cat("Survival management  \n")
+  cat("Survival initialisation  \n")
   list.surv <- data.manag.surv(formGroup, formSurv, data.long, formSurv_CompRisk = formSurv_CR)
   event1 <- list.surv$event1
   event2 <- list.surv$event2
@@ -398,7 +398,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
       if(hazard_baseline == "Splines"){
         Z <- list.surv$Z[,-1]
         pp <- seq(0,1, length.out = ord.splines)
-        pp <- tail(head(pp,-1),-1)
+        pp <- utils::tail(utils::head(pp,-1),-1)
         tt1 <- as.data.frame(cbind(Time,event1))
         tt <- tt1$Time[which(tt1$event1 == 1)]
         kn <- quantile(tt, pp, names = FALSE)
@@ -514,7 +514,7 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
         if(hazard_baseline_CR == "Splines"){
           Z_CR <- list.surv$Z_CR[,-1]
           pp.CR <- seq(0,1, length.out = ord.splines)
-          pp.CR <- tail(head(pp.CR,-1),-1)
+          pp.CR <- utils::tail(utils::head(pp.CR,-1),-1)
           tt2.CR <- as.data.frame(cbind(Time,event2))
           tt.CR <- tt2.CR$Time[which(tt2.CR$event2 == 1)]
           kn.CR <- quantile(tt.CR, pp.CR, names = FALSE)
@@ -703,57 +703,115 @@ FlexVar_JM <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data
   else{
     Zq <- randtoolbox::sobol(S1, dim = nb.e.a, mixed = TRUE, normal = TRUE)
   }
-  print(names_param)
   nb.priorMean.beta = length(priorMean.beta)
   nb.alpha = length(alpha)
+  if(is.null(sharedtype_CR)){
+    sharedtype_CR <- "None"
+  }
+  if(is.null(hazard_baseline_CR)){
+    hazard_baseline_CR <- "None"
+  }
   cat("First estimation  \n")
-  estimation <- marqLevAlg(binit, fn = log_llh, minimize = FALSE,
-                           nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
-                           competing_risk = competing_risk,
-                           nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S1,Zq = Zq, sharedtype = sharedtype,
-                           sharedtype_CR = sharedtype_CR,
-                           hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
-                           Utime = Utime, nb_pointsGK = nb_pointsGK,
-                           Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
-                           indices_beta_slope = indices_beta_slope, Time =Time,
-                           st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
-                           Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
-                           Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
-                           B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
-                           
-                           nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
-                           Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
-                           Os.0 = Os.0, Ws.0 = Ws.0,
-                           
-                           nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info,
-                           file = file, blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
-  if(variability_hetero){
-    Zq <- randtoolbox::sobol(S2,  nb.e.a+nb.e.a.sigma, normal = TRUE,scrambling = 1)
+  if(Comp.Rcpp){
+    estimation <- marqLevAlg(binit, fn = log_llh_rcpp, minimize = FALSE,
+                             nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
+                             competing_risk = competing_risk,
+                             nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S1,Zq = Zq, sharedtype = sharedtype,
+                             sharedtype_CR = sharedtype_CR,
+                             hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                             Utime = Utime, nb_pointsGK = nb_pointsGK,
+                             Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
+                             indices_beta_slope = indices_beta_slope, Time =Time,
+                             st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
+                             Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
+                             Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
+                             B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
+                             
+                             nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
+                             Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
+                             Os.0 = Os.0, Ws.0 = Ws.0,
+                             
+                             nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info,
+                             file = file, blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
+    if(variability_hetero){
+      Zq <- randtoolbox::sobol(S2,  nb.e.a+nb.e.a.sigma, normal = TRUE,scrambling = 1)
+    }
+    else{
+      Zq <- randtoolbox::sobol(S2, dim = nb.e.a, mixed = TRUE, normal = TRUE)
+    }
+    cat("Second estimation  \n")
+    estimation2 <- marqLevAlg(estimation$b, fn = log_llh_rcpp, minimize = FALSE,
+                              nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
+                              competing_risk = competing_risk,
+                              nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
+                              sharedtype_CR = sharedtype_CR,
+                              hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                              Utime = Utime, nb_pointsGK = nb_pointsGK,
+                              Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
+                              indices_beta_slope = indices_beta_slope, Time =Time,
+                              st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
+                              Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
+                              Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
+                              B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
+                              
+                              nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
+                              Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
+                              Os.0 = Os.0, Ws.0 = Ws.0,
+                              
+                              nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info, file = file,
+                              blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
+    
   }
   else{
-    Zq <- randtoolbox::sobol(S2, dim = nb.e.a, mixed = TRUE, normal = TRUE)
+    estimation <- marqLevAlg(binit, fn = log_llh, minimize = FALSE,
+                             nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
+                             competing_risk = competing_risk,
+                             nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S1,Zq = Zq, sharedtype = sharedtype,
+                             sharedtype_CR = sharedtype_CR,
+                             hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                             Utime = Utime, nb_pointsGK = nb_pointsGK,
+                             Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
+                             indices_beta_slope = indices_beta_slope, Time =Time,
+                             st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
+                             Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
+                             Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
+                             B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
+                             
+                             nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
+                             Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
+                             Os.0 = Os.0, Ws.0 = Ws.0,
+                             
+                             nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info,
+                             file = file, blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
+    if(variability_hetero){
+      Zq <- randtoolbox::sobol(S2,  nb.e.a+nb.e.a.sigma, normal = TRUE,scrambling = 1)
+    }
+    else{
+      Zq <- randtoolbox::sobol(S2, dim = nb.e.a, mixed = TRUE, normal = TRUE)
+    }
+    cat("Second estimation  \n")
+    estimation2 <- marqLevAlg(estimation$b, fn = log_llh, minimize = FALSE,
+                              nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
+                              competing_risk = competing_risk,
+                              nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
+                              sharedtype_CR = sharedtype_CR,
+                              hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                              Utime = Utime, nb_pointsGK = nb_pointsGK,
+                              Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
+                              indices_beta_slope = indices_beta_slope, Time =Time,
+                              st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
+                              Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
+                              Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
+                              B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
+                              
+                              nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
+                              Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
+                              Os.0 = Os.0, Ws.0 = Ws.0,
+                              
+                              nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info, file = file,
+                              blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
+    
   }
-  cat("Second estimation  \n")
-  estimation2 <- marqLevAlg(estimation$b, fn = log_llh, minimize = FALSE,
-                            nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
-                            competing_risk = competing_risk,
-                            nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
-                            sharedtype_CR = sharedtype_CR,
-                            hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
-                            Utime = Utime, nb_pointsGK = nb_pointsGK,
-                            Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
-                            indices_beta_slope = indices_beta_slope, Time =Time,
-                            st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
-                            Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
-                            Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
-                            B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
-                            
-                            nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
-                            Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
-                            Os.0 = Os.0, Ws.0 = Ws.0,
-                            
-                            nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info, file = file,
-                            blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
   var_trans <- matrix(rep(0,length(binit)**2),nrow=length(binit),ncol=length(binit))
   var_trans[upper.tri(var_trans, diag=T)] <- estimation2$v
   sd.param <- sqrt(diag(var_trans))

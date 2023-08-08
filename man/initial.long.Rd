@@ -16,6 +16,8 @@ initial.long(formFixed, formRandom, idVar, data.long1, ncX, nproc = nproc)
 \item{data.long1}{A dataframe with the longitudinal data}
 
 \item{ncX}{An integer, the number of columns of matrix X, ie, the number of fixed effects}
+
+\item{nrpoc}{An integer, the number of cores for parallel computation}
 }
 \value{
 A list with the following components :

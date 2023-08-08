@@ -18,7 +18,7 @@ log_llh(
   sharedtype_CR,
   hazard_baseline,
   hazard_baseline_CR,
-  nb.knots.splines,
+  ord.splines,
   Xtime,
   Utime,
   nb_pointsGK,
@@ -54,7 +54,18 @@ log_llh(
   Bs.0,
   B.CR,
   Bs.CR,
-  Bs.0.CR
+  Bs.0.CR,
+  nb.e.a.sigma = nb.e.a.sigma,
+  nb.omega = nb.omega,
+  Otime = Otime,
+  Wtime = Wtime,
+  Os = Os,
+  Ws = Ws,
+  O_base = O_base,
+  W_base = W_base,
+  correlated_re = correlated_re,
+  Os.0 = Os.0,
+  Ws.0 = Ws.0
 )
 }
 \arguments{
@@ -83,8 +94,6 @@ log_llh(
 \item{hazard_baseline}{char : baseline hazard function : "Exponential" or "Weibull" or "Splines"}
 
 \item{hazard_baseline_CR}{char : baseline hazard function, competing risk : "Exponential" or "Weibull" or "Splines"}
-
-\item{nb.knots.splines}{integer : the order of splines function for baseline hazard function}
 
 \item{Xtime}{matrix : fixed effects at event time}
 
@@ -157,6 +166,8 @@ log_llh(
 \item{Bs.CR}{same for left truncation}
 
 \item{Bs.0.CR}{same for left truncation}
+
+\item{nb.knots.splines}{integer : the order of splines function for baseline hazard function}
 }
 \value{
 The value of the log-likelihood

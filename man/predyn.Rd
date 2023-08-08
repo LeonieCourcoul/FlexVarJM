@@ -9,9 +9,6 @@ predyn(newdata, FlexVarJM, s, window = 1, event = 1, L = 500, graph = F)
 \arguments{
 \item{graph}{}
 }
-\value{
-
-}
 \description{
 Dynamic prediction for a new individual
 }

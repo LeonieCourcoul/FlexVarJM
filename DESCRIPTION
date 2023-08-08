@@ -8,23 +8,27 @@ Description: This package allows to estimate joint models with a subject-specifi
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 Imports:
-  parallel,
-  dplyr,
-  lcmm,
-  randtoolbox,
-  mvtnorm,
-  survival,
-  marqLevAlg,
-  splines,
-  stats,
-  utils,
-  snow
+    parallel,
+    dplyr,
+    lcmm,
+    randtoolbox,
+    mvtnorm,
+    marqLevAlg,
+    splines,
+    stats,
+    utils,
+    snow,
+    doParallel,
+    ggplot2,
+    survminer,
+    Rcpp
 Depends: 
-    R (>= 2.10),
+    R (>= 3.5.0),
     survival,
-    foreach
+    foreach,
+    splines
 URL: https://github.com/LeonieCourcoul/FlexVarJM
 BugReports: https://github.com/LeonieCourcoul/FlexVarJM/issues
 LazyData: true
@@ -32,3 +36,6 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+LinkingTo: 
+    Rcpp,
+    RcppArmadillo

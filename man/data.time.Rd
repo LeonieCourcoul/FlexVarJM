@@ -27,10 +27,3 @@ A list with the following components
 \description{
 Management of data for longitudinal submodel
 }
-\examples{
-
-
-
-
-
-}

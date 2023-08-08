@@ -64,6 +64,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
                     nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                     Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re, Os.0 = Os.0, Ws.0 = Ws.0
 ){
+ # browser()
   #Manage parameters
   curseur <- 1
   #Evenement 1 :
@@ -540,5 +541,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
   if(is.na(ll_glob)){
     ll_glob <- -10E8
   }
+ # print(ll_glob)
   ll_glob
+  
 }

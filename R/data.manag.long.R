@@ -16,7 +16,6 @@
 #' \item{\code{I}}{an integer, the number of individuals}
 #' }
 #' @importFrom stats model.frame model.matrix
-#' @export
 #'
 #' @examples
 data.manag.long <- function(formGroup, formFixed, formRandom, data.long1){

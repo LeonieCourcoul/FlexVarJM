@@ -75,7 +75,7 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   idVar = "id"
   
   ##longitudinal part
-  cat("Longitudinal management \n")
+  cat("Longitudinal initialisation \n")
   list.long <- data.manag.long(formGroup,formFixed, formRandom,data.long)
   X_base <- list.long$X
   U <- list.long$U
@@ -93,7 +93,6 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   offset <- list.long$offset
   Ind <- list.long$I
   if(is.null(binit)){
-    cat("Longitudinal initialisation  \n")
     list.init.long <- initial.long(formFixed, formRandom, idVar, data.long,
                                    ncol(list.long$X), nproc = nproc)
     sigma_epsilon <- list.init.long$sigma
@@ -103,35 +102,51 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
     priorMean.beta <- list.init.long$priorMean.beta
   }
   if(is.null(binit)){
-    binit <- c(cholesky_b, priorMean.beta, alpha)
-    names_param <- c()
-    for(ea in 1:(choose(n = nb.e.a, k = 2) + nb.e.a)){
-      names_param <- c(names_param,paste0("chol",ea))
-      
-    }
-    #c(names_param, paste0("beta",colnames(X_base)))
-    index <- 0
-    for(ba in colnames(X_base)){#1:length(priorMean.beta)){
-      
-      names_param <-  c(names_param, paste0("beta",index,"#§#_",ba))
-      index <- index + 1
-      #names_param <- c(names_param, colnames(X_base))#c(names_param, paste0("beta",ba-1))
-      #cat(names_param)
-    }
+    # Marqueur :
+    ## Effets fixes trend :
+    binit <- c(binit, priorMean.beta)
+    names_param <- c(names_param, paste(colnames(X_base),"Y",sep = "_"))
+    ## Effets fixes var :
     if(variability_hetero){
-      #binit <- c(binit,mu.log.sigma, tau.log.sigma,alpha.sigma)
-      #names_param <- c(names_param, "mu.log.sigma", "tau.log.sigma","alpha.sigma.e1")
-      binit <- c(binit,mu.log.sigma,rep(0,nb.omega-1), rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma))
-      for(oo in 1:nb.omega){
-        names_param <- c(names_param, paste0("omega_",oo))
-      }
-      for(oo in 1:nb.e.a.sigma){
-        names_param <- c(names_param, paste0("cholSigma_",oo))
-      }
+      binit <- c(binit,mu.log.sigma,rep(0,nb.omega-1))
+      names_param <- c(names_param, paste(colnames(O_base),"Var",sep = "_"))
     }
     else{
       binit <- c(binit, sigma_epsilon)
-      names_param <- c(names_param, "sigma_epsilon")
+      names_param <- c(names_param, sigma)
+    }
+    ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
+    if(variability_hetero){
+      if(correlated_re){
+        binit <- c(binit,
+                   cholesky_b,
+                   rep(0, nb.e.a*nb.e.a.sigma),
+                   rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma))
+        for(i in 1:length(c(cholesky_b,
+                            rep(0, nb.e.a*nb.e.a.sigma),
+                            rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma)))){
+          names_param <- c(names_param, paste("chol", i, sep = "_"))
+        }
+      }
+      else{
+        binit <- c(binit,
+                   cholesky_b,
+                   rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma))
+        for(i in 1:length(cholesky_b)){
+          names_param <- c(names_param, paste("chol_b", i, sep = "_"))
+        }
+        for(i in 1:length(rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma))){
+          names_param <- c(names_param, paste("chol_tau", i, sep = "_"))
+        }
+      }
+      
+    }
+    else{
+      binit <- c(binit,
+                 cholesky_b)
+      for(i in 1:length(cholesky_b)){
+        names_param <- c(names_param, paste("chol_b", i, sep = "_"))
+      }
     }
     nb.priorMean.beta = length(priorMean.beta)
   }

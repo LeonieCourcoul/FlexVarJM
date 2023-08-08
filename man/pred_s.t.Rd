@@ -2,16 +2,21 @@
 % Please edit documentation in R/pred_s.t.R
 \name{pred_s.t}
 \alias{pred_s.t}
-\title{Title}
+\title{Predictions computation}
 \usage{
-pred_s.t(newdata, FlexVarJM, s, t, event, L)
+pred_s.t(object, newdata, s, window, event = 1, IC = NULL, draws = NULL)
 }
 \arguments{
-\item{L}{}
-}
-\value{
+\item{newdata}{}
 
+\item{s}{}
+
+\item{window}{}
+
+\item{event}{}
+
+\item{x}{}
 }
 \description{
-Title
+Predictions computation
 }

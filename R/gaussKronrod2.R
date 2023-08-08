@@ -14,8 +14,6 @@
 #' \item{\code{id.GK}}{the vector of IDs}
 #' }
 #'
-#' @export
-#'
 #' @examples
 data.GaussKronrod2 <- function(data.id, a, b, k = 15){
   #print("new")
