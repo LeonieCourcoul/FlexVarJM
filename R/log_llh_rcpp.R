@@ -236,7 +236,6 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
   sht <- list(sharedtype, sharedtype_CR)
   HB <- list(hazard_baseline, hazard_baseline_CR)
   for(i in 1:Ind){
-    print(i)
     if(variability_hetero){
       Otime_i <- Otime[i,]
       Wtime_i <- Wtime[i,]
