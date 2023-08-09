@@ -70,7 +70,7 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
   Otime_i <- c(1); Wtime_i <- c(1); Os_i <- as.matrix(1); Ws_i <- as.matrix(1); omega <- c(1)
   b_om <- as.matrix(1); alpha.sigma <- 0; Os.0_i <- as.matrix(1); Ws.0_i <- as.matrix(1); Xtime_i <- c(1); Utime_i <- c(1);
   alpha.sigma.CR <- 0;  Xs_i <- as.matrix(1); Us_i <- as.matrix(1); Xs.0_i <- as.matrix(1); Us.0_i<-as.matrix(1)
-  alpha.current <- 0; alpha.sigma.CR <- 0; beta_slope <- c(1); Xslope_i <- c(1); b_al_slope <- as.matrix(1)
+  alpha.current <- 0; alpha.current.CR <- 0; alpha.sigma.CR <- 0; beta_slope <- c(1); Xslope_i <- c(1); b_al_slope <- as.matrix(1)
   Uslope_i <- c(1); Xs.slope_i <- as.matrix(1); Us.slope_i <- as.matrix(1); Xs.slope.0_i <- as.matrix(1)
   Us.slope.0_i <- as.matrix(1); alpha.slope <- 0; alpha.slope.CR <- 0; Time_i <- 0; st_i <- c(1); st.0_i <- c(1)
   shape <- 0; gamma <- c(1); B_i <- c(1); Bs_i <- as.matrix(1); Bs.0_i <- as.matrix(1); Z_i <- c(1); alpha <- c(1)
@@ -236,6 +236,7 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
   sht <- list(sharedtype, sharedtype_CR)
   HB <- list(hazard_baseline, hazard_baseline_CR)
   for(i in 1:Ind){
+    print(i)
     if(variability_hetero){
       Otime_i <- Otime[i,]
       Wtime_i <- Wtime[i,]
