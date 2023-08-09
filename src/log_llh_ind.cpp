@@ -55,7 +55,6 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
     Sigma_current_GK = exp(arma::repmat(omega.t()*Os_i.t(),S,1) + b_om*Ws_i.t());
     h= h%exp(alpha_sigma*Sigma_CV);
     survLong = survLong + alpha_sigma*Sigma_current_GK;
-    
     if(left_trunc){
       Sigma_current_GK_0 = exp(arma::repmat(omega.t()*Os_0_i.t(),S,1) + b_om*Ws_0_i.t());
       survLong_0 = survLong_0 + alpha_sigma*Sigma_current_GK_0;
@@ -151,7 +150,6 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
   else{
     predsurv = arma::dot(alpha, Z_i);
   }
-  
   h = h_0*exp(predsurv)*h;
   etaBaseline = etaBaseline + predsurv;
   if(left_trunc){
@@ -245,7 +243,6 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
      // Rcout << "The value of v : \n" << f_Y_b_sigma << "\n";
     }
   }
-  
   arma::vec log_dens_int;
   double Clogexp;
   double log_dens;
@@ -267,10 +264,11 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
     
   }
   double den;
- // Rcout << "The value of v : \n" << 9 << "\n";
+ //Rcout << "The value of v : \n" << 1 << "\n";
   if(left_trunc){
     if(competing_risk){
-      den = log(sum(Surv_0*Surv_0_CR))-log(S);
+      den = log(arma::dot(Surv_0,Surv_0_CR))-log(S);
+      //Rcout << "The value of v : \n" << arma::dot(Surv_0,Surv_0_CR) << "\n";
     }
     else{
       den = log(sum(Surv_0))-log(S);
