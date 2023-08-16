@@ -77,7 +77,6 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
   P.0_i <- 0; shape.CR <- 0; gamma.CR <- c(1); B.CR_i <- c(1); Bs.CR_i <- as.matrix(1); Bs.0.CR_i <- as.matrix(1)
   Z.CR_i <- c(1); alpha.CR <- c(1); O_base_i <- as.matrix(1); W_base_i <- as.matrix(1); sigma.epsilon <- 0
   
-  
   #Manage parameters
   curseur <- 1
   #Evenement 1 :
@@ -218,14 +217,14 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
     C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
     MatCov <- C1
   }
-  
+
   #Manage random effects
   #browser()
   random.effects <- Zq%*%t(MatCov)
   b_al <- random.effects[,1:nb.e.a]
   b_al <- matrix(b_al, ncol = nb.e.a)
   if(sharedtype %in% c("CVS","S") || sharedtype_CR %in% c("CVS","S")){
-    b_al_slope <- b_al[,-1]
+    b_al_slope <- as.matrix(b_al[,-1])
   }
   # browser()
   if(variability_hetero){
@@ -237,37 +236,37 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
   HB <- list(hazard_baseline, hazard_baseline_CR)
   for(i in 1:Ind){
     if(variability_hetero){
-      Otime_i <- Otime[i,]
-      Wtime_i <- Wtime[i,]
-      Os_i <- Os[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-      Ws_i <- Ws[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+      Otime_i <- as.matrix(Otime[i,])
+      Wtime_i <- as.matrix(Wtime[i,])
+      Os_i <- as.matrix(Os[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
+      Ws_i <- as.matrix(Ws[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
       O_base_i <- O_base[offset[i]:(offset[i+1]-1),]
       O_base_i <- matrix(O_base_i, nrow = offset[i+1]-offset[i])
       W_base_i <- W_base[offset[i]:(offset[i+1]-1),]
       W_base_i <- matrix(W_base_i, nrow = offset[i+1]-offset[i])
       if(left_trunc){
-        Os.0_i <- Os[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-        Ws.0_i <- Ws[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+        Os.0_i <- as.matrix(Os.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
+        Ws.0_i <- as.matrix(Ws.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
       }
     }
     if(sharedtype %in% c("CV","CVS") || (competing_risk && sharedtype_CR %in% c("CV","CVS")) ){
-      Xtime_i <- Xtime[i,]
-      Utime_i <- Utime[i,]
-      Xs_i <- Xs[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-      Us_i <- Us[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+      Xtime_i <- as.matrix(Xtime[i,])
+      Utime_i <- as.matrix(Utime[i,])
+      Xs_i <- as.matrix(Xs[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
+      Us_i <- as.matrix(Us[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
       if(left_trunc){
-        Xs.0_i <- Xs.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-        Us.0_i <- Us.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+        Xs.0_i <- as.matrix(Xs.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
+        Us.0_i <- as.matrix(Us.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
       }
     }
     if(sharedtype %in% c("CVS","S") || (competing_risk && sharedtype_CR %in% c("CVS","S") )){
-      Xslope_i <- Xslope[i,]
-      Uslope_i <- Uslope[i,]
-      Xs.slope_i <- Xs.slope[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-      Us.slope_i <- Us.slope[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+      Xslope_i <- as.matrix(Xslope[i,])
+      Uslope_i <- as.matrix(Uslope[i,])
+      Xs.slope_i <- as.matrix(Xs.slope[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
+      Us.slope_i <- as.matrix(Us.slope[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
       if(left_trunc){
-        Xs.slope.0_i <- Xs.slope.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-        Us.slope.0_i <- Us.slope.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+        Xs.slope.0_i <- as.matrix(Xs.slope.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
+        Us.slope.0_i <- as.matrix(Us.slope.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
       }
     }
     if(hazard_baseline == "Weibull"){

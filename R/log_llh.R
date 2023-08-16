@@ -64,7 +64,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
                     nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                     Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re, Os.0 = Os.0, Ws.0 = Ws.0
 ){
- # browser()
+  #browser()
   #Manage parameters
   curseur <- 1
   #Evenement 1 :
@@ -202,7 +202,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
     MatCov <- C1
   }
-  
+
   #Manage random effects
   #browser()
   random.effects <- Zq%*%t(MatCov)
@@ -238,8 +238,8 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       h <- h*exp(alpha.sigma*Sigma.CV)
       survLong <- survLong + alpha.sigma*Sigma.current.GK
       if(left_trunc){
-        Os.0_i <- Os[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-        Ws.0_i <- Ws[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+        Os.0_i <- Os.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+        Ws.0_i <- Ws.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
         Sigma.current.GK.0 <- exp(matrix(rep(omega%*%t(Os.0_i),S),nrow=S,byrow = T) + b_om%*%t(Ws.0_i))
         survLong.0 <- survLong.0 + alpha.sigma*Sigma.current.GK.0
       }
@@ -541,7 +541,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
   if(is.na(ll_glob)){
     ll_glob <- -10E8
   }
- # print(ll_glob)
+  #print(ll_glob)
   ll_glob
   
 }

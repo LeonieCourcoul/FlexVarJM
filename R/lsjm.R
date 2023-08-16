@@ -278,12 +278,16 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   #cat("Longitudinal management \n")
   list.long <- data.manag.long(formGroup,formFixed, formRandom,data.long)
   X_base <- list.long$X
+  X_base <- as.matrix(X_base)
   U <- list.long$U
+  U <- as.matrix(U)
   nb.e.a <- ncol(U)
   y.new.prog <- list.long$y.new.prog
   list.var <- data.manag.sigma(formGroup,formFixedVar, formRandomVar,data.long)
   O_base <- list.var$X
+  O_base <- as.matrix(O_base)
   W_base <- list.var$U
+  W_base <- as.matrix(W_base)
   nb.omega <- ncol(O_base)
   nb.e.a.sigma <- ncol(W_base)
   data.long <- cbind(data.long,y.new.prog)
@@ -340,29 +344,31 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       list.data.GK.current <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                         formFixed, formRandom,timeVar)
       Xtime <- list.data.current.time$Xtime
+      Xtime <- as.matrix(Xtime)
       Utime <- list.data.current.time$Utime
-      Xs <- list.data.GK.current$Xtime
-      Us <- list.data.GK.current$Utime
+      Utime <- as.matrix(Utime)
+      Xs <- as.matrix(list.data.GK.current$Xtime)
+      Us <- as.matrix(list.data.GK.current$Utime)
       if(left_trunc){
         list.data.GK.current.0 <- data.time(list.GaussKronrod.0$data.id2, c(t(list.GaussKronrod.0$st)),
                                             formFixed, formRandom,timeVar)
-        Xs.0 <- list.data.GK.current.0$Xtime
-        Us.0 <- list.data.GK.current.0$Utime
+        Xs.0 <- as.matrix(list.data.GK.current.0$Xtime)
+        Us.0 <- as.matrix(list.data.GK.current.0$Utime)
       }
     }
     if(sharedtype %in% c("CVS","S")){
       list.data.slope.time <- data.time(data.id, list.surv$Time, formSlopeFixed, formSlopeRandom,timeVar)
       list.data.GK.slope <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                       formSlopeFixed, formSlopeRandom,timeVar)
-      Xslope <- list.data.slope.time$Xtime
-      Uslope <- list.data.slope.time$Utime
-      Xs.slope <- list.data.GK.slope$Xtime
-      Us.slope <- list.data.GK.slope$Utime
+      Xslope <- as.matrix(list.data.slope.time$Xtime)
+      Uslope <- as.matrix(list.data.slope.time$Utime)
+      Xs.slope <- as.matrix(list.data.GK.slope$Xtime)
+      Us.slope <- as.matrix(list.data.GK.slope$Utime)
       if(left_trunc){
         list.data.GK.slope.0 <- data.time(list.GaussKronrod.0$data.id2, c(t(list.GaussKronrod.0$st)),
                                           formSlopeFixed, formSlopeRandom,timeVar)
-        Xs.slope.0 <- list.data.GK.slope.0$Xtime
-        Us.slope.0 <- list.data.GK.slope.0$Utime
+        Xs.slope.0 <- as.matrix(list.data.GK.slope.0$Xtime)
+        Us.slope.0 <- as.matrix(list.data.GK.slope.0$Utime)
       }
     }
   }
@@ -454,30 +460,30 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
         list.data.current.time <- data.time(data.id, list.surv$Time, formFixed, formRandom,timeVar)
         list.data.GK.current <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                           formFixed, formRandom,timeVar)
-        Xtime <- list.data.current.time$Xtime
-        Utime <- list.data.current.time$Utime
-        Xs <- list.data.GK.current$Xtime
-        Us <- list.data.GK.current$Utime
+        Xtime <- as.matrix(list.data.current.time$Xtime)
+        Utime <- as.matrix(list.data.current.time$Utime)
+        Xs <- as.matrix(list.data.GK.current$Xtime)
+        Us <- as.matrix(list.data.GK.current$Utime)
         if(left_trunc){
           list.data.GK.current.0 <- data.time(list.GaussKronrod.0$data.id2, c(t(list.GaussKronrod.0$st)),
                                               formFixed, formRandom,timeVar)
-          Xs.0 <- list.data.GK.current.0$Xtime
-          Us.0 <- list.data.GK.current.0$Utime
+          Xs.0 <- as.matrix(list.data.GK.current.0$Xtime)
+          Us.0 <- as.matrix(list.data.GK.current.0$Utime)
         }
       }
       if(sharedtype_CR %in% c("CVS","S")){
         list.data.slope.time <- data.time(data.id, list.surv$Time, formSlopeFixed, formSlopeRandom,timeVar)
         list.data.GK.slope <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                         formSlopeFixed, formSlopeRandom,timeVar)
-        Xslope <- list.data.slope.time$Xtime
-        Uslope <- list.data.slope.time$Utime
-        Xs.slope <- list.data.GK.slope$Xtime
-        Us.slope <- list.data.GK.slope$Utime
+        Xslope <- as.matrix(list.data.slope.time$Xtime)
+        Uslope <- as.matrix(list.data.slope.time$Utime)
+        Xs.slope <- as.matrix(list.data.GK.slope$Xtime)
+        Us.slope <- as.matrix(list.data.GK.slope$Utime)
         if(left_trunc){
           list.data.GK.slope.0 <- data.time(list.GaussKronrod.0$data.id2, c(t(list.GaussKronrod.0$st)),
                                             formSlopeFixed, formSlopeRandom,timeVar)
-          Xs.slope.0 <- list.data.GK.slope.0$Xtime
-          Us.slope.0 <- list.data.GK.slope.0$Utime
+          Xs.slope.0 <- as.matrix(list.data.GK.slope.0$Xtime)
+          Us.slope.0 <- as.matrix(list.data.GK.slope.0$Utime)
         }
       }
     }
@@ -556,16 +562,16 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     list.data.current.sigma.time <- data.time(data.id, list.surv$Time, formFixedVar, formRandomVar,timeVar)
     list.data.GK.current.sigma <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                             formFixedVar, formRandomVar,timeVar)
-    Otime <- list.data.current.sigma.time$Xtime
-    Wtime <- list.data.current.sigma.time$Utime
-    Os <- list.data.GK.current.sigma$Xtime
-    Ws <- list.data.GK.current.sigma$Utime
+    Otime <- as.matrix(list.data.current.sigma.time$Xtime)
+    Wtime <- as.matrix(list.data.current.sigma.time$Utime)
+    Os <- as.matrix(list.data.GK.current.sigma$Xtime)
+    Ws <- as.matrix(list.data.GK.current.sigma$Utime)
     
     if(left_trunc){
       list.data.GK.current.0 <- data.time(list.GaussKronrod.0$data.id2, c(t(list.GaussKronrod.0$st)),
                                           formFixedVar, formRandomVar,timeVar)
-      Os.0 <- list.data.GK.current.0$Xtime
-      Ws.0 <- list.data.GK.current.0$Utime
+      Os.0 <- as.matrix(list.data.GK.current.0$Xtime)
+      Ws.0 <- as.matrix(list.data.GK.current.0$Utime)
     }
   }
   
@@ -635,11 +641,11 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       if(sharedtype %in% c("RE")){
         stop("Not implemented yet")
       }
-      if(sharedtype %in% c("CV","CVS")){
+      if(sharedtype_CR %in% c("CV","CVS")){
         binit <- c(binit, alpha.current.CR)
         names_param <- c(names_param, "Current Value (CR)")
       }
-      if(sharedtype %in%  c("CVS","S")){
+      if(sharedtype_CR %in%  c("CVS","S")){
         binit <- c(binit, alpha.slope.CR)
         names_param <- c(names_param, "Current Slope (CR)")
       }
