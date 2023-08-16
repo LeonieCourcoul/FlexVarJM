@@ -198,7 +198,6 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
     else{
       predsurv_CR = arma::dot(alpha_CR, Z_i_CR);
     }
-    
     h_CR = h_0_CR*exp(predsurv_CR)*h_CR;
     etaBaseline_CR = etaBaseline_CR + predsurv_CR;
     if(left_trunc){
@@ -268,7 +267,6 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
   if(left_trunc){
     if(competing_risk){
       den = log(arma::dot(Surv_0,Surv_0_CR))-log(S);
-      //Rcout << "The value of v : \n" << arma::dot(Surv_0,Surv_0_CR) << "\n";
     }
     else{
       den = log(sum(Surv_0))-log(S);
