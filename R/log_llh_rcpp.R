@@ -297,6 +297,7 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
         if(left_trunc){
           st.0_i <- st.0[i,]
         }
+      }
       if(hazard_baseline_CR == "Splines"){
         B.CR_i <- B.CR[i,]
         Bs.CR_i <- Bs.CR[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
@@ -335,6 +336,7 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
   if(is.na(ll_glob)){
     ll_glob <- -10E8
   }
+  
   #print(ll_glob)
   ll_glob
 }

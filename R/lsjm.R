@@ -708,7 +708,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
 
   }
   else{
-    Zq <- randtoolbox::sobol(S1, dim = nb.e.a, mixed = TRUE, normal = TRUE)
+    Zq <- randtoolbox::sobol(S1, dim = nb.e.a, normal = TRUE, scrambling = 1)
   }
   nb.priorMean.beta = length(priorMean.beta)
   nb.alpha = length(alpha)
@@ -744,7 +744,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       Zq <- randtoolbox::sobol(S2,  nb.e.a+nb.e.a.sigma, normal = TRUE,scrambling = 1)
     }
     else{
-      Zq <- randtoolbox::sobol(S2, dim = nb.e.a, mixed = TRUE, normal = TRUE)
+      Zq <- randtoolbox::sobol(S2, dim = nb.e.a, normal = TRUE,scrambling = 1)
     }
     cat("Second estimation  \n")
     estimation2 <- marqLevAlg(estimation$b, fn = log_llh_rcpp, minimize = FALSE,
@@ -794,7 +794,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       Zq <- randtoolbox::sobol(S2,  nb.e.a+nb.e.a.sigma, normal = TRUE,scrambling = 1)
     }
     else{
-      Zq <- randtoolbox::sobol(S2, dim = nb.e.a, mixed = TRUE, normal = TRUE)
+      Zq <- randtoolbox::sobol(S2, dim = nb.e.a,  normal = TRUE,scrambling = 1)
     }
     cat("Second estimation  \n")
     estimation2 <- marqLevAlg(estimation$b, fn = log_llh, minimize = FALSE,
