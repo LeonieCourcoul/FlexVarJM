@@ -290,6 +290,7 @@ summary.lsjm <- function(object,...)
   e1_share_tab <- NULL
   e1_alpha_tab <- NULL
   e1_names_tab <- c()
+  #browser()
   if(x$control$variability_hetero){
     e1_var_tab <- matrix(nrow = 1, ncol = 4)
     e1_var_tab[,1] <- alpha.sigma
@@ -331,7 +332,7 @@ summary.lsjm <- function(object,...)
     e1_alpha_tab[,2] <- alpha.se
     e1_alpha_tab[,3] <- e1_alpha_tab[,1]/e1_alpha_tab[,2]
     e1_alpha_tab[,4] <- 1 - pchisq(e1_alpha_tab[,3]**2,1)
-    #e1_names_tab <- c(e1_names_tab, alpha.name)
+    e1_names_tab <- c(e1_names_tab, alpha.name)
   }
   
   

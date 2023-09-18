@@ -273,7 +273,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     data.long$id <- as.integer(data.long$id)
   }
   idVar = "id"
-  
+ # browser()
   ##longitudinal part
   #cat("Longitudinal management \n")
   list.long <- data.manag.long(formGroup,formFixed, formRandom,data.long)
@@ -578,7 +578,10 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   #browser()
   
   
-  if(is.null(binit)){
+  if(!is.null(binit)){
+    binit_user <- binit
+  }
+    
     alpha.sigma <- 0
     alpha.current <- 0
     alpha.slope <- 0
@@ -702,7 +705,13 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     }
     nb.priorMean.beta = length(priorMean.beta)
     nb.alpha = length(alpha)
-  }
+    
+    if(!is.null(binit_user)){
+      binit <- binit_user
+    }
+    
+  
+    
   if(variability_hetero){
     Zq <- randtoolbox::sobol(S1,  nb.e.a+nb.e.a.sigma, normal = TRUE, scrambling = 1)
 

@@ -267,6 +267,8 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
   if(left_trunc){
     if(competing_risk){
       den = log(arma::dot(Surv_0,Surv_0_CR))-log(S);
+      //Rcout << "The value of v : \n" << den << "\n";
+      //Rcout << "The value of v : \n" << log(sum(exp(log(Surv_0)+log(Surv_0_CR))))-log(S) << "\n";
     }
     else{
       den = log(sum(Surv_0))-log(S);
