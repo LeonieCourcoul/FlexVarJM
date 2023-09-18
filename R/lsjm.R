@@ -835,7 +835,8 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   table.res <- cbind(param_est, sd.param)
   table.res <- as.data.frame(table.res)
   colnames(table.res) <- c("Estimation", "SE")
-  rownames(table.res) <- names_param
+  print(names_param)
+  #rownames(table.res) <- names_param
   
   time.prog2 <- Sys.time()
   time.prog.fin <- difftime(time.prog2, time.prog1)
