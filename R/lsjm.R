@@ -577,7 +577,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   
   #browser()
   
-  
+  binit_user <- NULL
   if(!is.null(binit)){
     binit_user <- binit
   }
