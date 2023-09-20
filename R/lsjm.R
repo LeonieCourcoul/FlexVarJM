@@ -607,7 +607,10 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     }
     ## Covariables :
     binit <- c(binit, alpha)
-    names_param <- c(names_param, paste(colnames(Z),"",sep = "_"))
+    if(!is.null(alpha)){
+      names_param <- c(names_param, paste(colnames(Z),"",sep = "_"))
+    }
+    
     ## Association :
     if(sharedtype %in% c("RE")){
       stop("Not implemented yet")
@@ -639,7 +642,10 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       }
       ## Covariables :
       binit <- c(binit, alpha_CR)
-      names_param <- c(names_param, paste(colnames(Z_CR),"CR",sep = "_"))
+      if(!is.null(alpha_CR)){
+        names_param <- c(names_param, paste(colnames(Z_CR),"CR",sep = "_"))
+      }
+      
       ## Association :
       if(sharedtype %in% c("RE")){
         stop("Not implemented yet")
@@ -836,7 +842,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   table.res <- as.data.frame(table.res)
   colnames(table.res) <- c("Estimation", "SE")
   print(names_param)
-  #rownames(table.res) <- names_param
+  rownames(table.res) <- names_param
   
   time.prog2 <- Sys.time()
   time.prog.fin <- difftime(time.prog2, time.prog1)
