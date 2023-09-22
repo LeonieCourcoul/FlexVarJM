@@ -326,7 +326,7 @@ summary.lsjm <- function(object,...)
     e1_share_tab[,4] <- 1 - pchisq(e1_share_tab[,3]**2,1)
     e1_names_tab <- c(e1_names_tab, alpha.slope.name)
   }
-  if(length(alpha) > 0){
+  if(x$control$nb.alpha >=1){
     e1_alpha_tab <- matrix(nrow = length(alpha), ncol = 4)
     e1_alpha_tab[,1] <- alpha
     e1_alpha_tab[,2] <- alpha.se
@@ -425,7 +425,7 @@ summary.lsjm <- function(object,...)
       e2_share_tab[,4] <- 1 - pchisq(e2_share_tab[,3]**2,1)
       e2_names_tab <- c(e2_names_tab, alpha.slope.CR.name)
     }
-    if(length(alpha.CR) > 0){
+    if(x$control$nb.alpha.CR >=1){
       e2_alpha_tab <- matrix(nrow = length(alpha.CR), ncol = 4)
       e2_alpha_tab[,1] <- alpha.CR
       e2_alpha_tab[,2] <- alpha.CR.se

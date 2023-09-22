@@ -66,7 +66,9 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
                          nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                          Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re, Os.0 = Os.0, Ws.0 = Ws.0
 ){
+
   #initialisation des paramètres
+  #browser()
   Otime_i <- c(1); Wtime_i <- c(1); Os_i <- as.matrix(1); Ws_i <- as.matrix(1); omega <- c(1)
   b_om <- as.matrix(1); alpha.sigma <- 0; Os.0_i <- as.matrix(1); Ws.0_i <- as.matrix(1); Xtime_i <- c(1); Utime_i <- c(1);
   alpha.sigma.CR <- 0;  Xs_i <- as.matrix(1); Us_i <- as.matrix(1); Xs.0_i <- as.matrix(1); Us.0_i<-as.matrix(1)
@@ -107,21 +109,42 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
     curseur <- curseur+nb.alpha
   }
   ## Association :
-  if(sharedtype %in% c("RE")){
-    stop("Not implemented yet")
-  }
-  if(sharedtype %in% c("CV","CVS")){
+  if("current value" %in% sharedtype){
     alpha.current <- param[curseur]
     curseur <- curseur + 1
   }
-  if(sharedtype %in%  c("CVS","S")){
+  else{
+    alpha.current <- 0
+  }
+  if("slope" %in% sharedtype){
     alpha.slope <- param[curseur]
     curseur <- curseur + 1
   }
-  if(variability_hetero){
+  else{
+    alpha.slope <- 0
+  }
+  if("variability" %in% sharedtype){
     alpha.sigma <- param[curseur]
     curseur <- curseur + 1
   }
+  else{
+    alpha.sigma <- 0
+  }
+  #if(sharedtype %in% c("RE")){
+  #  stop("Not implemented yet")
+  #}
+  #if(sharedtype %in% c("CV","CVS")){
+  #  alpha.current <- param[curseur]
+  #  curseur <- curseur + 1
+  #}
+  #if(sharedtype %in%  c("CVS","S")){
+  #  alpha.slope <- param[curseur]
+  #  curseur <- curseur + 1
+  #}
+  #if(variability_hetero){
+  #  alpha.sigma <- param[curseur]
+  #  curseur <- curseur + 1
+  #}
   # Evenement 2
   if(competing_risk){
     ## Risque de base :
@@ -151,26 +174,47 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
       curseur <- curseur+nb.alpha.CR
     }
     ## Association :
-    if(sharedtype_CR %in% c("RE")){
-      stop("Not implemented yet")
-    }
-    if(sharedtype_CR %in% c("CV","CVS")){
+    if("current value" %in% sharedtype_CR){
       alpha.current.CR <- param[curseur]
       curseur <- curseur + 1
     }
-    if(sharedtype_CR %in%  c("CVS","S")){
+    else{
+      alpha.current.CR <- 0
+    }
+    if("slope" %in% sharedtype_CR){
       alpha.slope.CR <- param[curseur]
       curseur <- curseur + 1
     }
-    if(variability_hetero){
+    else{
+      alpha.slope <- 0
+    }
+    if("variability" %in% sharedtype_CR){
       alpha.sigma.CR <- param[curseur]
       curseur <- curseur + 1
     }
+    else{
+      alpha.sigma.CR <- 0
+    }
+    #if(sharedtype_CR %in% c("RE")){
+    #  stop("Not implemented yet")
+    #}
+    #if(sharedtype_CR %in% c("CV","CVS")){
+    #  alpha.current.CR <- param[curseur]
+    #  curseur <- curseur + 1
+    #}
+    #if(sharedtype_CR %in%  c("CVS","S")){
+    #  alpha.slope.CR <- param[curseur]
+    #  curseur <- curseur + 1
+    #}
+    #if(variability_hetero){
+    #  alpha.sigma.CR <- param[curseur]
+    #  curseur <- curseur + 1
+    #}
   }
   # Marqueur :
   ## Effets fixes trend :
   beta <- param[curseur:(curseur+nb.priorMean.beta-1)]
-  if(sharedtype %in% c("CVS","S") || sharedtype_CR %in% c("CVS","S")){
+  if( "slope" %in% sharedtype || "slope" %in% sharedtype_CR){
     beta_slope <- beta[indices_beta_slope]
   }
   curseur <- curseur+nb.priorMean.beta
@@ -219,11 +263,10 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
   }
 
   #Manage random effects
-  #browser()
   random.effects <- Zq%*%t(MatCov)
   b_al <- random.effects[,1:nb.e.a]
   b_al <- matrix(b_al, ncol = nb.e.a)
-  if(sharedtype %in% c("CVS","S") || sharedtype_CR %in% c("CVS","S")){
+  if("slope" %in% sharedtype || (competing_risk && "slope" %in% sharedtype_CR)){
     b_al_slope <- as.matrix(b_al[,-1])
   }
   # browser()
@@ -234,6 +277,9 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
   ll_glob <- 0
   sht <- list(sharedtype, sharedtype_CR)
   HB <- list(hazard_baseline, hazard_baseline_CR)
+  list_nb_points_int <- list(S , nb_pointsGK)
+  sharedtype_bool <- c("current value" %in% sharedtype, "slope" %in% sharedtype, "variability" %in% sharedtype)
+  sharedtype_CR_bool <- c("current value" %in% sharedtype_CR, "slope" %in% sharedtype_CR, "variability" %in% sharedtype_CR)
   for(i in 1:Ind){
     if(variability_hetero){
       Otime_i <- as.matrix(Otime[i,])
@@ -249,7 +295,7 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
         Ws.0_i <- as.matrix(Ws.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
       }
     }
-    if(sharedtype %in% c("CV","CVS") || (competing_risk && sharedtype_CR %in% c("CV","CVS")) ){
+    if("current value" %in% sharedtype ||(competing_risk && "current value" %in% sharedtype_CR)){
       Xtime_i <- as.matrix(Xtime[i,])
       Utime_i <- as.matrix(Utime[i,])
       Xs_i <- as.matrix(Xs[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
@@ -259,7 +305,7 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
         Us.0_i <- as.matrix(Us.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
       }
     }
-    if(sharedtype %in% c("CVS","S") || (competing_risk && sharedtype_CR %in% c("CVS","S") )){
+    if("slope" %in% sharedtype ||(competing_risk && "slope" %in% sharedtype_CR)){
       Xslope_i <- as.matrix(Xslope[i,])
       Uslope_i <- as.matrix(Uslope[i,])
       Xs.slope_i <- as.matrix(Xs.slope[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),])
@@ -322,9 +368,9 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
       event2_i <- event2[i]
     }
     list.event <- list(event1_i,event2_i)
-    log_ind <- log_llh_ind(variability_hetero, Otime_i, Wtime_i, Os_i, Ws_i, omega, b_om, S, nb_pointsGK,
+    log_ind <- log_llh_ind(variability_hetero, Otime_i, Wtime_i, Os_i, Ws_i, omega, b_om, list_nb_points_int,
                            alpha.sigma, left_trunc, Os.0_i, Ws.0_i, competing_risk, alpha.sigma.CR, beta,
-                           Xtime_i, Utime_i, b_al,Xs_i, Us_i, Xs.0_i, Us.0_i, alpha.current, sht,
+                           Xtime_i, Utime_i, b_al,Xs_i, Us_i, Xs.0_i, Us.0_i, alpha.current, sharedtype_bool,sharedtype_CR_bool,
                            alpha.current.CR, beta_slope, Xslope_i, b_al_slope, Uslope_i, Xs.slope_i, 
                            Us.slope_i,Xs.slope.0_i, Us.slope.0_i, alpha.slope, alpha.slope.CR, HB, 
                            wk, Time_i, st_i, st.0_i, shape, gamma, B_i, Bs_i, Bs.0_i, Z_i, alpha, P_i, P.0_i, 

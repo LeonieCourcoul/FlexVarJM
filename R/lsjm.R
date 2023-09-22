@@ -161,12 +161,14 @@
 #' }
 #'
 lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
-                       variability_hetero = TRUE, formFixedVar, formRandomVar, correlated_re = FALSE, sharedtype = "CV", hazard_baseline = "Exponential",
-                       formSlopeFixed = NULL, formSlopeRandom = NULL, indices_beta_slope = NULL,
-                       nb_pointsGK = 15, ord.splines = 3, competing_risk = FALSE, formSurv_CR = NULL,
-                       hazard_baseline_CR = "Exponential", sharedtype_CR = "CV", left_trunc = FALSE,
-                       Time.0 = NULL, S1 = 1000, S2= 5000, nproc = 1, clustertype = "SOCK", maxiter = 100,
-                       print.info = FALSE, file = NULL, epsa = 1e-03, epsb = 1e-03, epsd = 1e-03, binit = NULL, Comp.Rcpp = TRUE
+                 variability_hetero = TRUE, formFixedVar, formRandomVar, correlated_re = FALSE, sharedtype = "CV+VAR", hazard_baseline = "Exponential",
+                 formSlopeFixed = NULL, formSlopeRandom = NULL, indices_beta_slope = NULL,
+                 nb_pointsGK = 15, ord.splines = 3, competing_risk = FALSE, formSurv_CR = NULL,
+                 hazard_baseline_CR = "Exponential", sharedtype_CR = "CV+VAR", left_trunc = FALSE,
+                 Time.0 = NULL, S1 = 1000, S2= 5000, nproc = 1, clustertype = "SOCK", maxiter = 100,
+                 print.info = FALSE, file = NULL, epsa = 1e-03, epsb = 1e-03, epsd = 1e-03, binit = NULL, Comp.Rcpp = TRUE
+                 
+                 
                        
 ){
   time.prog1 <- Sys.time()
@@ -185,12 +187,12 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   if(class(data.long) != "data.frame") stop("The argument data.long must be a data frame")
   if(nrow(data.long) == 0) stop("Data should not be empty")
   if(!(timeVar %in% colnames(data.long))) stop("Unable to find variable 'timeVar' in 'data.long'")
-  if(length(sharedtype) != 1 || !(sharedtype %in% c("RE", "CV", "CVS", "S"))) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
+ # if(length(sharedtype) != 1 || !(sharedtype %in% c("RE", "CV", "CVS", "S"))) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
   if(class(variability_hetero) != "logical") stop("The argument 'varability_hetero' must be a logical")
-  if(sharedtype %in% c("CVS", "S") && missing(formSlopeFixed)) stop("The argument formSlopeFixed must be specified when the 'sharedtype' variable has the value CVS or S")
-  if(sharedtype %in% c("CVS", "S") && class(formSlopeFixed) != "formula") stop("The argument formSlopeFixed must be a formula")
-  if(sharedtype %in% c("CVS", "S") && missing(formSlopeRandom)) stop("The argument formSlopeRandom must be specified when the 'sharedtype' variable has the value CVS or S")
-  if(sharedtype %in% c("CVS", "S") && class(formSlopeRandom) != "formula") stop("The argument formSlopeRandom must be a formula")
+  #if(sharedtype %in% c("CVS", "S") && missing(formSlopeFixed)) stop("The argument formSlopeFixed must be specified when the 'sharedtype' variable has the value CVS or S")
+  #if(sharedtype %in% c("CVS", "S") && class(formSlopeFixed) != "formula") stop("The argument formSlopeFixed must be a formula")
+  #if(sharedtype %in% c("CVS", "S") && missing(formSlopeRandom)) stop("The argument formSlopeRandom must be specified when the 'sharedtype' variable has the value CVS or S")
+  #if(sharedtype %in% c("CVS", "S") && class(formSlopeRandom) != "formula") stop("The argument formSlopeRandom must be a formula")
   if(missing(formSurv)) stop("The argument formSurv must be specified")
   if(class(formSurv)!="formula") stop("The argument formSurv must be a formula")
   if(class(precision) != "numeric") stop("The argument precision must be a numeric")
@@ -205,8 +207,8 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   if(class(competing_risk) != "logical") stop("The argument competing_risk (to take into account two competing events) must be a logical")
   if(competing_risk && missing(formSurv_CR)) stop("The argument formSurv_CR must be specified when the argument competing_risk is TRUE")
   if(competing_risk && class(formSurv_CR)!="formula") stop("The argument formSurv_CR must be a formula when the argument competing_risk is TRUE")
-  if(competing_risk && length(sharedtype_CR) != 1 ) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
-  if(competing_risk && !(sharedtype %in% c("RE", "CV", "CVS", "S"))) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
+  #if(competing_risk && length(sharedtype_CR) != 1 ) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
+  #if(competing_risk && !(sharedtype %in% c("RE", "CV", "CVS", "S"))) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
   if(competing_risk && length(hazard_baseline_CR) != 1 ) stop("The value of argument 'hazard_baseline_CR' must be of lenght 1 and must be 'Exponential' or 'Weibull' or 'Splines'")
   if(competing_risk && !(hazard_baseline_CR %in% c("Weibull", "Splines","Exponential"))) stop("The value of argument 'hazard_baseline_CR' must be of lenght 1 and must be 'Exponential' or 'Weibull' or 'Splines'")
   if(left_trunc && missing(Time.0)) stop("The argument Time.0 (time of entry into the study) must be specified when left_trunc is TRUE")
@@ -324,7 +326,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   data.id <- data.long[!duplicated(id),]
   data.id <- cbind(data.id,event1)
   lag = 0
-  if(sharedtype %in% c("random effects")){
+  if(2 == 1){
     stop("Not implemented yet")
   }
   else{
@@ -338,7 +340,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       st.0 <- list.GaussKronrod.0$st
       P.0 <- list.GaussKronrod.0$P
     }
-    if(sharedtype %in% c("CV","CVS") ){
+    if("current value" %in% sharedtype){
       formSurv_dep <- update(formSurv_dep, ~. + VC.emp)
       list.data.current.time <- data.time(data.id, list.surv$Time, formFixed, formRandom,timeVar)
       list.data.GK.current <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
@@ -356,7 +358,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
         Us.0 <- as.matrix(list.data.GK.current.0$Utime)
       }
     }
-    if(sharedtype %in% c("CVS","S")){
+    if("slope" %in% sharedtype){
       list.data.slope.time <- data.time(data.id, list.surv$Time, formSlopeFixed, formSlopeRandom,timeVar)
       list.data.GK.slope <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                       formSlopeFixed, formSlopeRandom,timeVar)
@@ -403,7 +405,8 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     }
     else{
       if(hazard_baseline == "Splines"){
-        Z <- list.surv$Z[,-1]
+        Z <- list.surv$Z
+        nameZ <- colnames(Z)[-1]
         pp <- seq(0,1, length.out = ord.splines)
         pp <- utils::tail(utils::head(pp,-1),-1)
         tt1 <- as.data.frame(cbind(Time,event1))
@@ -422,8 +425,11 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
           alpha <- NULL
         }
         else{
-          alpha <- tmp_model$coefficients[1:ncol(Z)]
+          
+          alpha <- tmp_model$coefficients[1:(ncol(Z)-1)]
         }
+        Z <- as.matrix(list.surv$Z[,-1], ncol = ncol(list.surv$Z)-1)
+        colnames(Z) <- nameZ
         if(left_trunc){
           Bs.0 <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
         }
@@ -441,7 +447,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     if(variability_hetero){
       formSurv_dep_CR <- update(formSurv_dep_CR, ~. + sd.emp)
     }
-    if(sharedtype_CR %in% c("RE")){
+    if("random effect" %in% sharedtype_CR){
       stop("Not implemented yet")
     }
     else{
@@ -455,7 +461,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
         st.0 <- list.GaussKronrod.0$st
         P.0 <- list.GaussKronrod.0$P
       }
-      if(sharedtype_CR %in% c("CV","CVS")){
+      if( "current value" %in% sharedtype_CR){
         formSurv_dep_CR <- update(formSurv_dep_CR, ~. + VC.emp)
         list.data.current.time <- data.time(data.id, list.surv$Time, formFixed, formRandom,timeVar)
         list.data.GK.current <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
@@ -471,7 +477,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
           Us.0 <- as.matrix(list.data.GK.current.0$Utime)
         }
       }
-      if(sharedtype_CR %in% c("CVS","S")){
+      if( "slope" %in% sharedtype_CR){
         list.data.slope.time <- data.time(data.id, list.surv$Time, formSlopeFixed, formSlopeRandom,timeVar)
         list.data.GK.slope <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                         formSlopeFixed, formSlopeRandom,timeVar)
@@ -519,7 +525,8 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       }
       else{
         if(hazard_baseline_CR == "Splines"){
-          Z_CR <- list.surv$Z_CR[,-1]
+          Z_CR <- list.surv$Z_CR
+          namesZ_CR <- colnames(Z_CR)[-1]
           pp.CR <- seq(0,1, length.out = ord.splines)
           pp.CR <- utils::tail(utils::head(pp.CR,-1),-1)
           tt2.CR <- as.data.frame(cbind(Time,event2))
@@ -529,7 +536,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
           rr.CR <- sort(c(rep(range(Time,0), 4L), kn.CR))
           B.CR <- splines::splineDesign(rr.CR, Time, ord = 4L)
           Bs.CR <- splines::splineDesign(rr.CR, c(t(st_calc)), ord = 4L)
-          opt_splines_CR <- optim(rep(0,ncol(B)), fn2,event = event2,W2 = B.CR,P = P,wk = wk,Time = Time,W2s = Bs.CR,id.GK = id.GK, method="BFGS", hessian = T)
+          opt_splines_CR <- optim(rep(0,ncol(B.CR)), fn2,event = event2,W2 = B.CR,P = P,wk = wk,Time = Time,W2s = Bs.CR,id.GK = id.GK, method="BFGS", hessian = T)
           tmp_model <- coxph(formSurv_dep_CR,
                              data = data.id,
                              x = TRUE)
@@ -537,8 +544,10 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
             alpha_CR <- NULL
           }
           else{
-            alpha_CR <- tmp_model$coefficients[1:ncol(Z_CR)]
+            alpha_CR <- tmp_model$coefficients[1:(ncol(Z_CR)-1)]
           }
+          Z_CR <- as.matrix(list.surv$Z_CR[,-1], ncol = ncol(list.surv$Z_CR)-1)
+          colnames(Z_CR) <- namesZ_CR
           if(left_trunc){
             Bs.0.CR <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
           }
@@ -608,25 +617,38 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     ## Covariables :
     binit <- c(binit, alpha)
     if(!is.null(alpha)){
+      print(head(Z))
       names_param <- c(names_param, paste(colnames(Z),"",sep = "_"))
     }
     
     ## Association :
-    if(sharedtype %in% c("RE")){
-      stop("Not implemented yet")
-    }
-    if(sharedtype %in% c("CV","CVS")){
+    if("current value" %in% sharedtype){
       binit <- c(binit, alpha.current)
       names_param <- c(names_param, "Current Value")
     }
-    if(sharedtype %in%  c("CVS","S")){
+    if("slope" %in% sharedtype){
       binit <- c(binit, alpha.slope)
       names_param <- c(names_param, "Current Slope")
     }
-    if(variability_hetero){
+    if("variability" %in% sharedtype){
       binit <- c(binit,alpha.sigma)
       names_param <- c(names_param, "Current Variance")
     }
+    #if(sharedtype %in% c("RE")){
+    #  stop("Not implemented yet")
+    #}
+    #if(sharedtype %in% c("CV","CVS")){
+    #  binit <- c(binit, alpha.current)
+    #  names_param <- c(names_param, "Current Value")
+    #}
+    #if(sharedtype %in%  c("CVS","S")){
+    #  binit <- c(binit, alpha.slope)
+    #  names_param <- c(names_param, "Current Slope")
+    #}
+    #if(variability_hetero){
+    #  binit <- c(binit,alpha.sigma)
+    #  names_param <- c(names_param, "Current Variance")
+    #}
     # Evenement 2
     if(competing_risk){
       ## Risque de base :
@@ -647,21 +669,33 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       }
       
       ## Association :
-      if(sharedtype %in% c("RE")){
-        stop("Not implemented yet")
-      }
-      if(sharedtype_CR %in% c("CV","CVS")){
-        binit <- c(binit, alpha.current.CR)
+      if("current value" %in% sharedtype_CR){
+        binit <- c(binit, alpha.current)
         names_param <- c(names_param, "Current Value (CR)")
       }
-      if(sharedtype_CR %in%  c("CVS","S")){
-        binit <- c(binit, alpha.slope.CR)
+      if("slope" %in% sharedtype_CR){
+        binit <- c(binit, alpha.slope)
         names_param <- c(names_param, "Current Slope (CR)")
       }
-      if(variability_hetero){
-        binit <- c(binit,alpha.sigma.CR)
+      if("variability" %in% sharedtype_CR){
+        binit <- c(binit,alpha.sigma)
         names_param <- c(names_param, "Current Variance (CR)")
       }
+      #if(sharedtype %in% c("RE")){
+      #  stop("Not implemented yet")
+      #}
+      #if(sharedtype_CR %in% c("CV","CVS")){
+      #  binit <- c(binit, alpha.current.CR)
+      #  names_param <- c(names_param, "Current Value (CR)")
+      #}
+      #if(sharedtype_CR %in%  c("CVS","S")){
+      #  binit <- c(binit, alpha.slope.CR)
+      #  names_param <- c(names_param, "Current Slope (CR)")
+      #}
+      #if(variability_hetero){
+      #  binit <- c(binit,alpha.sigma.CR)
+      #  names_param <- c(names_param, "Current Variance (CR)")
+      #}
     }
     # Marqueur :
     ## Effets fixes trend :
@@ -734,6 +768,8 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     hazard_baseline_CR <- "None"
   }
   cat("First estimation  \n")
+  
+  #browser()
   if(Comp.Rcpp){
     estimation <- marqLevAlg(binit, fn = log_llh_rcpp, minimize = FALSE,
                              nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
@@ -762,6 +798,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       Zq <- randtoolbox::sobol(S2, dim = nb.e.a, normal = TRUE,scrambling = 1)
     }
     cat("Second estimation  \n")
+
     estimation2 <- marqLevAlg(estimation$b, fn = log_llh_rcpp, minimize = FALSE,
                               nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
                               competing_risk = competing_risk,
@@ -778,7 +815,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                               
                               nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                               Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
-                              Os.0 = Os.0, Ws.0 = Ws.0,
+                              Os.0 = Os.0, Ws.0 = Ws.0, 
                               
                               nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info, file = file,
                               blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
@@ -841,7 +878,6 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   table.res <- cbind(param_est, sd.param)
   table.res <- as.data.frame(table.res)
   colnames(table.res) <- c("Estimation", "SE")
-  print(names_param)
   rownames(table.res) <- names_param
   
   time.prog2 <- Sys.time()

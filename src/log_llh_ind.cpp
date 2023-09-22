@@ -12,10 +12,10 @@ using namespace std;
 // [[Rcpp::export]]
 
 double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtime_i,
-             arma::mat Os_i, arma::mat Ws_i, arma::vec omega, arma::mat b_om, int S, int nb_pointsGK,
+             arma::mat Os_i, arma::mat Ws_i, arma::vec omega, arma::mat b_om, List nb_points_int,
              double alpha_sigma, bool left_trunc, arma::mat Os_0_i, arma::mat Ws_0_i, bool competing_risk,
              double alpha_sigma_CR, arma::vec beta, arma::rowvec Xtime_i, arma::vec Utime_i, arma::mat b_al,
-             arma::mat Xs_i, arma::mat Us_i, arma::mat Xs_0_i, arma::mat Us_0_i, double alpha_current,List sht,
+             arma::mat Xs_i, arma::mat Us_i, arma::mat Xs_0_i, arma::mat Us_0_i, double alpha_current,arma::vec sharedtype, arma::vec sharedtype_CR,
              double alpha_current_CR, arma::vec beta_slope, arma::rowvec Xslope_i, arma::mat b_al_slope, arma::vec Uslope_i, arma::mat Xs_slope_i, 
              arma::mat Us_slope_i,arma::mat Xs_slope_0_i, arma::mat Us_slope_0_i, double alpha_slope, double alpha_slope_CR, List HB, 
              arma::vec wk, double Time_i, arma::vec st_i, arma::vec st_0_i, double shape, arma::vec gamma, arma::vec B_i, arma::mat Bs_i, arma::mat Bs_0_i,
@@ -24,12 +24,18 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
              arma::rowvec Z_i_CR, arma::vec alpha_CR, arma::mat X_base_i, arma::mat O_base_i, arma::mat W_base_i, arma::mat U_i, arma::vec y_i, int n_row_X, double sigma_epsilon,List event){
   
   //do something
-  const std::string& sharedtype = sht[0];
-  const std::string& sharedtype_CR = sht[1];
   const std::string& hazard_baseline = HB[0];
   const std::string& hazard_baseline_CR = HB[1];
+  int S = nb_points_int[0];
+  int nb_pointsGK= nb_points_int[1];
   int event1_i = event[0];
   int event2_i = event[1];
+  bool dep_current = sharedtype[0];
+  bool dep_slope = sharedtype[1];
+  bool dep_variability = sharedtype[2];
+  bool dep_current_CR = sharedtype_CR[0];
+  bool dep_slope_CR = sharedtype_CR[1];
+  bool dep_variability_CR = sharedtype_CR[2];
   arma::vec h(S,fill::ones);
   arma::vec h_CR(S,fill::ones);
   //double h = 1;
@@ -50,9 +56,11 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
   double etaBaseline_0_CR =0;
   arma::mat survLong_CR(S,nb_pointsGK, fill::zeros);
   arma::mat survLong_0_CR(S,nb_pointsGK, fill::zeros);
-  if(variability_hetero){
+  if(dep_variability || dep_variability_CR){
     Sigma_CV = exp(arma::dot(omega, Otime_i)+b_om*Wtime_i);
     Sigma_current_GK = exp(arma::repmat(omega.t()*Os_i.t(),S,1) + b_om*Ws_i.t());
+    }
+  if(dep_variability){
     h= h%exp(alpha_sigma*Sigma_CV);
     survLong = survLong + alpha_sigma*Sigma_current_GK;
     if(left_trunc){
@@ -61,7 +69,7 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
     }
   }
   if(competing_risk){
-    if(variability_hetero){
+    if(dep_variability_CR){
       h_CR= h_CR%exp(alpha_sigma_CR*Sigma_CV);
       survLong_CR = survLong_CR + alpha_sigma_CR*Sigma_current_GK;
       if(left_trunc){
@@ -69,21 +77,21 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
       }
     }
   }
-  if((sharedtype == "CV" || sharedtype == "CVS") ||
-     (competing_risk && (sharedtype_CR == "CV" || sharedtype_CR == "CVS"))){
+  if((dep_current) ||
+     (competing_risk && dep_current_CR)){
     CV =arma::dot(beta, Xtime_i)+b_al*Utime_i;
     current_GK = arma::repmat(beta.t()*Xs_i.t(),S,1) + b_al*Us_i.t();
     if(left_trunc){
       current_GK_0 = arma::repmat(beta.t()*Xs_0_i.t(),S,1) + b_al*Us_0_i.t();
     }
-    if((sharedtype == "CV" || sharedtype == "CVS")){
+    if(dep_current){
       h = h%exp(alpha_current*CV);
       survLong = survLong + alpha_current*current_GK;
       if(left_trunc){
         survLong_0 = survLong_0 + alpha_current*current_GK_0;
       }
     }
-    if(competing_risk && (sharedtype_CR == "CV" || sharedtype_CR == "CVS")){
+    if(competing_risk && dep_current_CR){
       h_CR = h_CR%exp(alpha_current_CR*CV);
       survLong_CR = survLong_CR + alpha_current_CR*current_GK;
       if(left_trunc){
@@ -91,21 +99,21 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
       }
     }
   }
-  if((sharedtype == "CVS" || sharedtype == "S") ||
-     (competing_risk && (sharedtype_CR == "CVS" || sharedtype_CR == "S"))){
+  if((dep_slope) ||
+     (competing_risk && dep_slope_CR)){
     slope = arma::dot(beta_slope, Xslope_i)+b_al_slope*Uslope_i;
     slope_GK = arma::repmat(beta_slope.t()*Xs_slope_i.t(),S,1) + b_al_slope*Us_slope_i.t();
     if(left_trunc){
       slope_GK_0 = arma::repmat(beta_slope.t()*Xs_slope_0_i.t(),S,1) + b_al_slope*Us_slope_0_i.t();
     }
-    if(sharedtype == "CVS" || sharedtype == "S"){
+    if(dep_slope){
       h = h%exp(alpha_slope*slope);
       survLong = survLong + alpha_slope*slope_GK;
       if(left_trunc){
         survLong_0 = survLong_0 + alpha_slope*slope_GK_0;
       }
     }
-    if(competing_risk && (sharedtype_CR == "CVS" || sharedtype_CR == "S")){
+    if(competing_risk && dep_slope_CR){
       h_CR = h_CR%exp(alpha_slope_CR*slope);
       survLong_CR = survLong_CR + alpha_slope_CR*slope_GK;
       if(left_trunc){
