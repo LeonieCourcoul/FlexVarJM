@@ -287,11 +287,12 @@ summary.lsjm <- function(object,...)
   cat("\n")
   cat("    First event:")
   e1_var_tab <- NULL
-  e1_share_tab <- NULL
+  e1_share_current_tab <- NULL
+  e1_share_slope_tab <- NULL
   e1_alpha_tab <- NULL
   e1_names_tab <- c()
   #browser()
-  if(x$control$variability_hetero){
+  if(c("variability") %in% x$control$sharedtype){
     e1_var_tab <- matrix(nrow = 1, ncol = 4)
     e1_var_tab[,1] <- alpha.sigma
     e1_var_tab[,2] <- alpha.sigma.se
@@ -299,31 +300,24 @@ summary.lsjm <- function(object,...)
     e1_var_tab[,4] <- 1 - pchisq(e1_var_tab[,3]**2,1)
     e1_names_tab <- c(e1_names_tab, alpha.sigma.name)
   }
-  if(x$control$sharedtype == "RE"){
+  if(c("random effect") %in% x$control$sharedtype){
     print("Not implemented yet")
   }
-  if(x$control$sharedtype == "CV"){
-    e1_share_tab <- matrix(nrow = 1, ncol = 4)
-    e1_share_tab[,1] <- alpha.current
-    e1_share_tab[,2] <- alpha.current.se
-    e1_share_tab[,3] <- e1_share_tab[,1]/e1_share_tab[,2]
-    e1_share_tab[,4] <- 1 - pchisq(e1_share_tab[,3]**2,1)
+  if(c("current value") %in% x$control$sharedtype){
+    e1_share_current_tab <- matrix(nrow = 1, ncol = 4)
+    e1_share_current_tab[,1] <- alpha.current
+    e1_share_current_tab[,2] <- alpha.current.se
+    e1_share_current_tab[,3] <- e1_share_current_tab[,1]/e1_share_tab[,2]
+    e1_share_current_tab[,4] <- 1 - pchisq(e1_share_current_tab[,3]**2,1)
     e1_names_tab <- c(e1_names_tab, alpha.current.name)
   }
-  if(x$control$sharedtype == "CVS"){
-    e1_share_tab <- matrix(nrow = 2, ncol = 4)
-    e1_share_tab[,1] <- c(alpha.current,alpha.slope)
-    e1_share_tab[,2] <- c(alpha.current.se,alpha.slope.se)
-    e1_share_tab[,3] <- e1_share_tab[,1]/e1_share_tab[,2]
-    e1_share_tab[,4] <- 1 - pchisq(e1_share_tab[,3]**2,1)
-    e1_names_tab <- c(e1_names_tab, alpha.current.name, alpha.slope.name)
-  }
-  if(x$control$sharedtype == "S"){
-    e1_share_tab <- matrix(nrow = 1, ncol = 4)
-    e1_share_tab[,1] <- alpha.slope
-    e1_share_tab[,2] <- alpha.slope.se
-    e1_share_tab[,3] <- e1_share_tab[,1]/e1_share_tab[,2]
-    e1_share_tab[,4] <- 1 - pchisq(e1_share_tab[,3]**2,1)
+  #leonie la plus belle <3 <3 <3
+  if(c("slope") %in% x$control$sharedtype){
+    e1_share_slope_tab <- matrix(nrow = 1, ncol = 4)
+    e1_share_slope_tab[,1] <- c(alpha.slope)
+    e1_share_slope_tab[,2] <- c(alpha.slope.se)
+    e1_share_slope_tab[,3] <- e1_share_slope_tab[,1]/e1_share_slope_tab[,2]
+    e1_share_slope_tab[,4] <- 1 - pchisq(e1_share_slope_tab[,3]**2,1)
     e1_names_tab <- c(e1_names_tab, alpha.slope.name)
   }
   if(x$control$nb.alpha >=1){
@@ -387,10 +381,11 @@ summary.lsjm <- function(object,...)
   if(x$control$competing_risk){
     cat("    Second event:")
     e2_var_tab <- NULL
-    e2_share_tab <- NULL
+    e2_share_current_tab <- NULL
+    e2_share_slope_tab <- NULL
     e2_alpha_tab <- NULL
     e2_names_tab <- c()
-    if(x$control$variability_hetero){
+    if(c("variability") %in% x$control$sharedtype_CR){
       e2_var_tab <- matrix(nrow = 1, ncol = 4)
       e2_var_tab[,1] <- alpha.sigma.CR
       e2_var_tab[,2] <- alpha.sigma.CR.se
@@ -398,31 +393,23 @@ summary.lsjm <- function(object,...)
       e2_var_tab[,4] <- 1 - pchisq(e2_var_tab[,3]**2,1)
       e2_names_tab <- c(e2_names_tab, alpha.sigma.CR.name)
     }
-    if(x$control$sharedtype_CR == "RE"){
+    if(c("random effect") %in% x$control$sharedtype){
       print("Not implemented yet")
     }
-    if(x$control$sharedtype_CR == "CV"){
+    if(c("current value") %in% x$control$sharedtype){
       e2_share_tab <- matrix(nrow = 1, ncol = 4)
-      e2_share_tab[,1] <- alpha.current.CR
-      e2_share_tab[,2] <- alpha.current.CR.se
-      e2_share_tab[,3] <- e2_share_tab[,1]/e2_share_tab[,2]
-      e2_share_tab[,4] <- 1 - pchisq(e2_share_tab[,3]**2,1)
+      e2_share_current_tab[,1] <- alpha.current.CR
+      e2_share_current_tab[,2] <- alpha.current.CR.se
+      e2_share_current_tab[,3] <- e2_share_current_tab[,1]/e2_share_current_tab[,2]
+      e2_share_current_tab[,4] <- 1 - pchisq(e2_share_current_tab[,3]**2,1)
       e2_names_tab <- c(e2_names_tab, alpha.current.CR.name)
     }
-    if(x$control$sharedtype_CR == "CVS"){
-      e2_share_tab <- matrix(nrow = 2, ncol = 4)
-      e2_share_tab[,1] <- c(alpha.current.CR,alpha.slope.CR)
-      e2_share_tab[,2] <- c(alpha.current.CR.se,alpha.slope.CR.se)
-      e2_share_tab[,3] <- e2_share_tab[,1]/e2_share_tab[,2]
-      e2_share_tab[,4] <- 1 - pchisq(e2_share_tab[,3]**2,1)
-      e2_names_tab <- c(e2_names_tab, alpha.current.CR.name, alpha.slope.CR.name)
-    }
     if(x$control$sharedtype_CR == "S"){
-      e2_share_tab <- matrix(nrow = 1, ncol = 4)
-      e2_share_tab[,1] <- alpha.slope.CR
-      e2_share_tab[,2] <- alpha.slope.CR.se
-      e2_share_tab[,3] <- e2_share_tab[,1]/e2_share_tab[,2]
-      e2_share_tab[,4] <- 1 - pchisq(e2_share_tab[,3]**2,1)
+      e2_share_slope_tab <- matrix(nrow = 1, ncol = 4)
+      e2_share_slope_tab[,1] <- alpha.slope.CR
+      e2_share_slope_tab[,2] <- alpha.slope.CR.se
+      e2_share_slope_tab[,3] <- e2_share_slope_tab[,1]/e2_share_slope_tab[,2]
+      e2_share_slope_tab[,4] <- 1 - pchisq(e2_share_slope_tab[,3]**2,1)
       e2_names_tab <- c(e2_names_tab, alpha.slope.CR.name)
     }
     if(x$control$nb.alpha.CR >=1){
