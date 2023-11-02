@@ -393,10 +393,10 @@ summary.lsjm <- function(object,...)
       e2_var_tab[,4] <- 1 - pchisq(e2_var_tab[,3]**2,1)
       e2_names_tab <- c(e2_names_tab, alpha.sigma.CR.name)
     }
-    if(c("random effect") %in% x$control$sharedtype){
+    if(c("random effect") %in% x$control$sharedtype_CR){
       print("Not implemented yet")
     }
-    if(c("current value") %in% x$control$sharedtype){
+    if(c("current value") %in% x$control$sharedtype_CR){
       e2_share_current_tab <- matrix(nrow = 1, ncol = 4)
       e2_share_current_tab[,1] <- alpha.current.CR
       e2_share_current_tab[,2] <- alpha.current.CR.se
@@ -404,7 +404,7 @@ summary.lsjm <- function(object,...)
       e2_share_current_tab[,4] <- 1 - pchisq(e2_share_current_tab[,3]**2,1)
       e2_names_tab <- c(e2_names_tab, alpha.current.CR.name)
     }
-    if(x$control$sharedtype_CR == "S"){
+    if(c("slope") %in% x$control$sharedtype_CR){
       e2_share_slope_tab <- matrix(nrow = 1, ncol = 4)
       e2_share_slope_tab[,1] <- alpha.slope.CR
       e2_share_slope_tab[,2] <- alpha.slope.CR.se
