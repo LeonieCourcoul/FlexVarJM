@@ -82,22 +82,22 @@ summary.lsjm <- function(object,...)
     curseur <- curseur+x$control$nb.alpha
   }
   ## Association :
-  if(x$control$sharedtype %in% c("RE")){
+  if(c("random effect") %in% x$control$sharedtype ){
     stop("Not implemented yet")
   }
-  if(x$control$sharedtype %in% c("CV","CVS")){
+  if(c("current value") %in% x$control$sharedtype){
     alpha.current <- param[curseur]
     alpha.current.se <- param.se[curseur]
     alpha.current.name <- param.names[curseur]
     curseur <- curseur + 1
   }
-  if(x$control$sharedtype %in%  c("CVS","S")){
+  if(c("current slope") %in% x$control$sharedtype){
     alpha.slope <- param[curseur]
     alpha.slope.se <- param.se[curseur]
     alpha.slope.name <- param.names[curseur]
     curseur <- curseur + 1
   }
-  if(x$control$variability_hetero){
+  if(c("variability") %in% x$control$sharedtype){
     alpha.sigma <- param[curseur]
     alpha.sigma.se <- param.se[curseur]
     alpha.sigma.name <- param.names[curseur]
@@ -138,22 +138,22 @@ summary.lsjm <- function(object,...)
       curseur <- curseur+x$control$nb.alpha.CR
     }
     ## Association :
-    if(x$control$sharedtype_CR %in% c("RE")){
+    if(c("random effect") %in% x$control$sharedtype_CR){
       stop("Not implemented yet")
     }
-    if(x$control$sharedtype_CR %in% c("CV","CVS")){
+    if(c("current value") %in% x$control$sharedtype_CR){
       alpha.current.CR <- param[curseur]
       alpha.current.CR.se <- param.se[curseur]
       alpha.current.CR.name <- param.names[curseur]
       curseur <- curseur + 1
     }
-    if(x$control$sharedtype_CR %in%  c("CVS","S")){
+    if(c("current slope") %in% x$control$sharedtype_CR){
       alpha.slope.CR <- param[curseur]
       alpha.slope.CR.se <- param.se[curseur]
       alpha.slope.CR.name <- param.names[curseur]
       curseur <- curseur + 1
     }
-    if(x$control$variability_hetero){
+    if(c("variability") %in% x$control$sharedtype){
       alpha.sigma.CR <- param[curseur]
       alpha.sigma.CR.se <- param.se[curseur]
       alpha.sigma.CR.name <- param.names[curseur]

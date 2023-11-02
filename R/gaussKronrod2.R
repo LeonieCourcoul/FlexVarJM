@@ -1,8 +1,9 @@
 #' Initialisation of Survival Data at Gauss Kronrod time points 2
 #'
 #' @param data.id A database with covariates of interest and 1 line per subject
-#' @param Time A vector of time event
 #' @param k The number of Gauss Kronrod points, by default k = 15
+#' @param a First born
+#' @param b Second born
 #'
 #' @return A list with the following components :
 #' \describe{

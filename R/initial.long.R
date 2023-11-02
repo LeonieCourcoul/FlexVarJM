@@ -5,7 +5,7 @@
 #' @param idVar A character, indicates the name of the group variable
 #' @param data.long1 A dataframe with the longitudinal data
 #' @param ncX An integer, the number of columns of matrix X, ie, the number of fixed effects
-#' @param nrpoc An integer, the number of cores for parallel computation
+#' @param nproc An integer, the number of cores for parallel computation
 #'
 #' @return A list with the following components :
 #' \describe{

@@ -13,7 +13,7 @@
 #' @param sharedtype_CR vector : dependence structure for competing risk survival model : "RE" (random effects) or "CV" (current value) or "CVS" (current value and slope) or "S" (slope)
 #' @param hazard_baseline char : baseline hazard function : "Exponential" or "Weibull" or "Splines"
 #' @param hazard_baseline_CR char : baseline hazard function, competing risk : "Exponential" or "Weibull" or "Splines"
-#' @param nb.knots.splines integer : the order of splines function for baseline hazard function
+#' @param ord.splines integer : the order of splines function for baseline hazard function
 #' @param Xtime matrix : fixed effects at event time
 #' @param Utime matrix : RE at event time
 #' @param nb_pointsGK integer : number of points for Gauss-Kronrod approximation, 7 or 15 (default)
@@ -50,6 +50,17 @@
 #' @param B.CR same for left truncation
 #' @param Bs.CR same for left truncation
 #' @param Bs.0.CR same for left truncation
+#' @param Os matrix : fixed effects of variability at Gauss-Kronrod times
+#' @param Ws matrix : random effects of variability at Gauss-Kronrod times
+#' @param Otime matrix : fixed effects of variability at event time
+#' @param Wtime matrix : RE of variability at event time
+#' @param O_base matrix : fixed effects for variability
+#' @param W_base matrix : fixed effects for variability
+#' @param Os.0 matrix : same for left truncation
+#' @param Ws.0 matrix : same for left truncation
+#' @param ne.e.a.sigma integer : number of RE for variability
+#' @param ne.omega integer : number of fixed effects for variability
+#' @param correlated_re boolean : indicator to allow all the random effects to be correlated
 #'
 #' @return The value of the log-likelihood
 #' @export
