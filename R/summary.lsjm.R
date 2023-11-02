@@ -307,7 +307,7 @@ summary.lsjm <- function(object,...)
     e1_share_current_tab <- matrix(nrow = 1, ncol = 4)
     e1_share_current_tab[,1] <- alpha.current
     e1_share_current_tab[,2] <- alpha.current.se
-    e1_share_current_tab[,3] <- e1_share_current_tab[,1]/e1_share_tab[,2]
+    e1_share_current_tab[,3] <- e1_share_current_tab[,1]/e1_share_current_tab[,2]
     e1_share_current_tab[,4] <- 1 - pchisq(e1_share_current_tab[,3]**2,1)
     e1_names_tab <- c(e1_names_tab, alpha.current.name)
   }
@@ -361,7 +361,7 @@ summary.lsjm <- function(object,...)
     rownames(e1_bas_tab) <- gamma.name
     colnames(e1_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
   }
-  e1_surv_tab <- rbind(e1_var_tab, e1_share_tab, e1_alpha_tab)
+  e1_surv_tab <- rbind(e1_var_tab, e1_share_current_tab, e1_share_slope_tab, e1_alpha_tab)
   rownames(e1_surv_tab) <- e1_names_tab
   colnames(e1_surv_tab) <- c("Coeff", "SE", "Wald", "P-value")
   
@@ -397,7 +397,7 @@ summary.lsjm <- function(object,...)
       print("Not implemented yet")
     }
     if(c("current value") %in% x$control$sharedtype){
-      e2_share_tab <- matrix(nrow = 1, ncol = 4)
+      e2_share_current_tab <- matrix(nrow = 1, ncol = 4)
       e2_share_current_tab[,1] <- alpha.current.CR
       e2_share_current_tab[,2] <- alpha.current.CR.se
       e2_share_current_tab[,3] <- e2_share_current_tab[,1]/e2_share_current_tab[,2]
@@ -453,7 +453,7 @@ summary.lsjm <- function(object,...)
       colnames(e2_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
     }
     
-    e2_surv_tab <- rbind(e2_var_tab, e2_share_tab, e2_alpha_tab)
+    e2_surv_tab <- rbind(e2_var_tab, e2_share_current_tab, e2_share_slope_tab, e2_alpha_tab)
     rownames(e2_surv_tab) <- e2_names_tab
     colnames(e2_surv_tab) <- c("Coeff", "SE", "Wald", "P-value")
     
