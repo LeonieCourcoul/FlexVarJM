@@ -4,9 +4,11 @@
 # FlexVarJM
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/LeonieCourcoul/FlexVarJM/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/LeonieCourcoul/FlexVarJM/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of VarJM is to estimate joint model with subject-specific
+The goal of FlexVarJM is to estimate joint model with subject-specific
 time-dependent variability.
 
 The global function is ‘lsjm’. It handles to estimate joint model with a
@@ -25,12 +27,11 @@ You can install the development version of FlexVarJM from
 devtools::install_github("LeonieCourcoul/FlexVarJM")
 ```
 
-## Exemple
+## Example
 
 # Estimation
 
-This is an exemple in a simulated dataset where ‘binary’ is a binary
-variable.
+This is an example in a simulated dataset where is a binary variable.
 
 $$y_i(t_{ij}) = \color{blue}\tilde{y}_i(t_{ij}) \color{black} + \epsilon_{ij} = \beta_0 + b_{0i} + (\beta_1 + b_{1i})t_{ij} + \beta_2 * binary_i + \epsilon_{ij} $$
 
@@ -57,7 +58,7 @@ where :
 - $\tilde{y}'_i(t)$ is the current slope of the marker $y$
 
 ``` r
-example <- FlexVar_JM(formFixed = y~visit+binary,
+example <- lsjm(formFixed = y~visit+binary,
                       formRandom = ~ visit,
                       formGroup = ~ID,
                       formSurv = Surv(time, event ==1 ) ~ binary,
@@ -67,17 +68,17 @@ example <- FlexVar_JM(formFixed = y~visit+binary,
                       formFixedVar =~visit+binary,
                       formRandomVar =~visit,
                       correlated_re = TRUE,
-                      sharedtype = "CV",
+                      sharedtype = c("current value", "variability"),
                       hazard_baseline = "Weibull",
                       competing_risk = TRUE,
                       formSurv_CR = Surv(time, event ==2 ) ~ 1,
                       hazard_baseline_CR = "Weibull",
-                      sharedtype_CR = "CVS",
+                      sharedtype_CR = c("slope", "variability"),
                       formSlopeFixed =~1,
-                      formRandomFixed = ~1,
+                      formSlopeRandom = ~1,
                       indices_beta_slope = c(2), 
-                      S1 = 1000,
-                      S2 = 8000,
+                      S1 = 500,
+                      S2 = 1000,
                       nproc = 5,
                       Comp.Rcpp = TRUE
                       )
@@ -120,15 +121,16 @@ goodness <- goodness_of_fit(example, graph = T)
 
 # Predictions
 
-You can compute the probability for a (new) individual to have event 1
-or 2 between time s and time S+t years given that he did not experience
+You can compute the probability for (new) individual(s) to have event 1
+or 2 between time s and time s+t years given that he did not experience
 any event before time s, its trajectory of marker until time s ans the
 set of estimated parameters. To have a ‘IC%’ confidence interval, the
-predictions are computed ‘draws’ time and the percentiles of the
-predictions are computed. For example, for the individual 15 to
-experiment the event 1 between 3 and 5 years :
+predictions are computed ‘nb.draws’ time and the percentiles of the
+predictions are computed. For example, for individuals 1 and 3 to
+experiment the event 1 at time 1.5, 2, and 3, given their measurements
+until time 1 :
 
 ``` r
-newdata <- Data_toy[which(Data_toy$ID == 15),]
-predictions <- pred_s.t(example, newdata, s = 3, window = 1, event = 1, IC = 0.95, draws = 200)
+newdata <- Data_toy[which(Data_toy$ID %in% c(1,3)),]
+predyn(newdata,example,1, c(1.5,2,3), event = 1, IC = 95, nb.draws = 500, graph = TRUE)
 ```
