@@ -1,5 +1,5 @@
 lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
-                 variability_hetero = TRUE,  formFixedVar, formRandomVar,S1 = 1000, S2= 5000, nproc = 1, clustertype = "SOCK", maxiter = 100,
+                 variability_hetero = TRUE,  formFixedVar, formRandomVar, correlated_re = FALSE,S1 = 1000, S2= 5000, nproc = 1, clustertype = "SOCK", maxiter = 100,
                  print.info = FALSE, file = NULL, epsa = 1e-03, epsb = 1e-03, epsd = 1e-03, binit = NULL
                        
 ){
@@ -8,21 +8,21 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   #Check enter parameters
   if(missing(formFixed)) stop("The argument formFixed must be specified")
   if(missing(formRandom)) stop("The argument formRandom must be specified")
-  if(class(formFixed)!="formula") stop("The argument formFixed must be a formula")
-  if(class(formRandom)!="formula") stop("The argument formRandom must be a formula")
+  if(!inherits(class(formFixed),"formula")) stop("The argument formFixed must be a formula")
+  if(!inherits(class(formRandom),"formula")) stop("The argument formRandom must be a formula")
   if(missing(formGroup)) stop("The argument formGroup must be specified")
-  if(class(formGroup)!="formula") stop("The argument formGroup must be a formula")
+  if(!inherits(class(formGroup),"formula")) stop("The argument formGroup must be a formula")
   if(missing(timeVar)) stop("The argument timeVar must be specified")
-  if(class(timeVar) != "character") stop("The argument timeVar must be a character")
+  if(!inherits(class(timeVar),"character")) stop("The argument timeVar must be a character")
   if(length(timeVar) != 1) stop("The argument timeVar must be of length 1")
   if(missing(data.long)) stop("The argument data.long must be specified")
-  if(class(data.long) != "data.frame") stop("The argument data.long must be a data frame")
+  if(!inherits(class(data.long) ,"data.frame") )stop("The argument data.long must be a data frame")
   if(nrow(data.long) == 0) stop("Data should not be empty")
   if(!(timeVar %in% colnames(data.long))) stop("Unable to find variable 'timeVar' in 'data.long'")
-  if(class(variability_hetero) != "logical") stop("The argument 'varability_hetero' must be a logical")
-  if(class(precision) != "numeric") stop("The argument precision must be a numeric")
-  if(class(S1)!="numeric") stop("The argument S1 must be a numeric")
-  if(class(S2)!="numeric") stop("The argument S2 must be a numeric")
+  if(!inherits(class(variability_hetero) ,"logical") )stop("The argument 'varability_hetero' must be a logical")
+  if(!inherits(class(precision) , "numeric") )stop("The argument precision must be a numeric")
+  if(!inherits(class(S1),"numeric")) stop("The argument S1 must be a numeric")
+  if(!inherits(class(S2),"numeric")) stop("The argument S2 must be a numeric")
   #if(!(all.vars(formFixed) %in% colnames(data.long))) stop("All variables used in the argument formFixed must be in data.long")
   #if(!(all.vars(formRandom) %in% colnames(data.long))) stop("All variables used in the argument formRandom must be in data.long")
   #if(!(all.vars(formGroup) %in% colnames(data.long))) stop("All variables used in the argument formGroup must be in data.long")

@@ -18,7 +18,7 @@
 #' @import stats
 #' @import survival
 #'
-#' @examples
+
 data.manag.surv <- function(formGroup, formSurv, data.long1,formSurv_CompRisk){
   tmp <- data.long1[unique(c(all.vars(formGroup),all.vars(formSurv),all.vars(formSurv_CompRisk)))]
   tmp <- unique(tmp)

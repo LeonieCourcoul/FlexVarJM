@@ -4,11 +4,74 @@
 \alias{predyn}
 \title{Dynamic prediction for a new individual}
 \usage{
-predyn(newdata, FlexVarJM, s, window = 1, event = 1, L = 500, graph = F)
+predyn(
+  newdata,
+  object,
+  s,
+  times,
+  event = 1,
+  IC = 95,
+  nb.draws = 500,
+  graph = F
+)
 }
 \arguments{
-\item{graph}{}
+\item{newdata}{data frame : collected data for a new individual}
+
+\item{object}{lsjm object : estimation of the model}
+
+\item{s}{numeric : the time to begin prediction}
+
+\item{times}{numeric vector : future times to calculate predictions}
+
+\item{event}{integer (0, 1 or 2) : the event of interest for the prediction}
+
+\item{IC}{integer : percentage of confidence for the interval confidence (between 0 and 100), 95 by default, NULL if no IC}
+
+\item{nb.draws}{integer : the number of simulations to compute the interval confidence (by bootstrap), 500 by default}
+
+\item{graph}{boolean : indicator to plot the graphs or not}
+}
+\value{
+A table of dynamic predictions
 }
 \description{
 Dynamic prediction for a new individual
+}
+\examples{
+if(interactive()){
+
+#fit a joint model with competing risks and subaject-specific variability
+example <- lsjm(formFixed = y~visit+binary,
+formRandom = ~ visit,
+formGroup = ~ID,
+formSurv = Surv(time, event ==1 ) ~ binary,
+timeVar = "visit",
+data.long = Data_toy,
+variability_hetero = TRUE,
+formFixedVar =~visit,
+formRandomVar =~visit,
+correlated_re = TRUE,
+sharedtype = c("current value", "variability"),
+hazard_baseline = "Splines",
+formSlopeFixed =~1,
+formSlopeRandom = ~1,
+indices_beta_slope = c(2), 
+competing_risk = TRUE,
+formSurv_CR = Surv(time, event ==2 ) ~ 1,
+hazard_baseline_CR = "Weibull",
+sharedtype_CR = c("slope"),
+S1 = 100,
+S2 = 1000,
+nproc = 5,
+maxiter = 100,
+Comp.Rcpp = TRUE
+)
+
+#Prediction for individuals 1 and 3 to experiment the event 1 
+#at time 1.5, 2, and 3, given their measurements until time 1:
+newdata <- Data_toy[which(Data_toy$ID \%in\% c(1,3)),]
+pred.new <- predyn(newdata,example,1, c(1.5,2,2.8,3), event = 1, IC = 95, 
+nb.draws = 100, graph = TRUE)
+}
 }

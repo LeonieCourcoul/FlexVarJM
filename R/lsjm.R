@@ -12,7 +12,7 @@
 #' @details
 #' A. LONGITUDINAL SUBMODEL
 #'
-#' The longitudinal submodel is defined by a linear mixed effects model with the residual variance which coulb be supposed to be time-dependent and subject-specific :
+#' The longitudinal submodel is defined by a linear mixed effects model with the residual variance which could be supposed to be time-dependent and subject-specific :
 #' \eqn{\quad\left\{\begin{array}{ll}
 #' Y_{ij} = Y_{i}(t_{ij}) = \widetilde{Y}_i(t_{ij}) + \epsilon_{ij} = X_{ij}^{\top} \beta+Z_{ij}^{\top} b_{i}+\epsilon_{ij}, \\
 #' \epsilon_{ij}(t_{ij}) \sim \mathcal{N}(0,\sigma_i^2(t_{ij})) \hspace{3mm} \text{with} \hspace{3mm} \log(\sigma_i(t_{ij}))  = O_{ij}^{\top} \mu+M_{ij}^{\top} \tau_{i}
@@ -100,7 +100,7 @@
 #' @param epsb optional threshold for the convergence criterion based on the objective function stability.
 #' @param epsd optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whathever the problem.
 #' @param binit optional initials parameters.
-#' @param Comp.Rcpp bool to indicate if the computation is performed with RCPP program or R program. True by default.
+#' @param Comp.Rcpp boolean to indicate if the computation is performed with RCPP program or R program. True by default.
 #'
 #' @return A FlexVarJoint object which contains the following elements :
 #' \describe{
@@ -113,58 +113,50 @@
 #' @import dplyr
 #' @import survival
 #' @import marqLevAlg
+#' @import splines
 #' @importFrom survival Surv
 #' @importFrom randtoolbox sobol
 #' @export
 #'
 #' @examples
 #'
-#' \dontrun{
+#' if(interactive()){
 #'
 #' #fit a joint model with competing risks and subaject-specific variability
-#' example <- FlexVar_JM(formFixed = y~visit,
+#' example <- lsjm(formFixed = y~visit+binary,
 #' formRandom = ~ visit,
 #' formGroup = ~ID,
-#' formSurv = Surv(time, event ==1 ) ~ 1,
+#' formSurv = Surv(time, event ==1 ) ~ binary,
 #' timeVar = "visit",
 #' data.long = Data_toy,
 #' variability_hetero = TRUE,
-#' formFixedVar =~visit, 
+#' formFixedVar =~visit,
 #' formRandomVar =~visit,
 #' correlated_re = TRUE,
-#' sharedtype = "CV",
-#' hazard_baseline = "Weibull",
+#' sharedtype = c("current value", "variability"),
+#' hazard_baseline = "Splines",
+#' formSlopeFixed =~1,
+#' formSlopeRandom = ~1,
+#' indices_beta_slope = c(2), 
 #' competing_risk = TRUE,
 #' formSurv_CR = Surv(time, event ==2 ) ~ 1,
 #' hazard_baseline_CR = "Weibull",
-#' sharedtype_CR = "CV",
-#' S1 = 1000,
-#' S2 = 8000,
-#' nproc = 5
+#' sharedtype_CR = c("slope"),
+#' S1 = 100,
+#' S2 = 1000,
+#' nproc = 5,
+#' maxiter = 100,
+#' Comp.Rcpp = TRUE
 #' )
 #' 
-#' summary.FlexVarJM(example)
-#' 
-#' #Predictions for the goodness-of-fit :
-#' goodness <- goodness_of_fit(example, graph = T)
-#'
-#' #Predictions for a (new) individual to have event 1 between time
-#' s = 3 and time S+t = 4 years given that he did not experience any event
-#' before time s, its trajectory of marker until time s ans the set
-#' of estimated parameters :
-#'
-#' newdata <- Data_toy[which(Data_toy$ID == 15),]
-#' predictions <- pred_s.t(newdata, example, s = 3, window = 1, event = 1, tirage = NULL)
-#'
-#'
-#'
+#' summary(example)
 #' }
 #'
 lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
-                 variability_hetero = TRUE, formFixedVar, formRandomVar, correlated_re = FALSE, sharedtype = "CV+VAR", hazard_baseline = "Exponential",
+                 variability_hetero = TRUE, formFixedVar, formRandomVar, correlated_re = FALSE, sharedtype = c("current value", "variability"), hazard_baseline = "Exponential",
                  formSlopeFixed = NULL, formSlopeRandom = NULL, indices_beta_slope = NULL,
                  nb_pointsGK = 15, ord.splines = 3, competing_risk = FALSE, formSurv_CR = NULL,
-                 hazard_baseline_CR = "Exponential", sharedtype_CR = "CV+VAR", left_trunc = FALSE,
+                 hazard_baseline_CR = "Exponential", sharedtype_CR = c("current value", "variability"), left_trunc = FALSE,
                  Time.0 = NULL, S1 = 1000, S2= 5000, nproc = 1, clustertype = "SOCK", maxiter = 100,
                  print.info = FALSE, file = NULL, epsa = 1e-03, epsb = 1e-03, epsd = 1e-03, binit = NULL, Comp.Rcpp = TRUE
                  
@@ -176,37 +168,37 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   #Check enter parameters
   if(missing(formFixed)) stop("The argument formFixed must be specified")
   if(missing(formRandom)) stop("The argument formRandom must be specified")
-  if(class(formFixed)!="formula") stop("The argument formFixed must be a formula")
-  if(class(formRandom)!="formula") stop("The argument formRandom must be a formula")
+  if(!inherits(class(formFixed),"formula")) stop("The argument formFixed must be a formula")
+  if(!inherits(class(formRandom),"formula")) stop("The argument formRandom must be a formula")
   if(missing(formGroup)) stop("The argument formGroup must be specified")
-  if(class(formGroup)!="formula") stop("The argument formGroup must be a formula")
+  if(!inherits(class(formGroup),"formula")) stop("The argument formGroup must be a formula")
   if(missing(timeVar)) stop("The argument timeVar must be specified")
-  if(class(timeVar) != "character") stop("The argument timeVar must be a character")
+  if(!inherits(class(timeVar),"character")) stop("The argument timeVar must be a character")
   if(length(timeVar) != 1) stop("The argument timeVar must be of length 1")
   if(missing(data.long)) stop("The argument data.long must be specified")
-  if(class(data.long) != "data.frame") stop("The argument data.long must be a data frame")
+  if(!inherits(class(data.long),"data.frame")) stop("The argument data.long must be a data frame")
   if(nrow(data.long) == 0) stop("Data should not be empty")
   if(!(timeVar %in% colnames(data.long))) stop("Unable to find variable 'timeVar' in 'data.long'")
  # if(length(sharedtype) != 1 || !(sharedtype %in% c("RE", "CV", "CVS", "S"))) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
-  if(class(variability_hetero) != "logical") stop("The argument 'varability_hetero' must be a logical")
+  if(!inherits(class(variability_hetero),"logical")) stop("The argument 'varability_hetero' must be a logical")
   #if(sharedtype %in% c("CVS", "S") && missing(formSlopeFixed)) stop("The argument formSlopeFixed must be specified when the 'sharedtype' variable has the value CVS or S")
   #if(sharedtype %in% c("CVS", "S") && class(formSlopeFixed) != "formula") stop("The argument formSlopeFixed must be a formula")
   #if(sharedtype %in% c("CVS", "S") && missing(formSlopeRandom)) stop("The argument formSlopeRandom must be specified when the 'sharedtype' variable has the value CVS or S")
   #if(sharedtype %in% c("CVS", "S") && class(formSlopeRandom) != "formula") stop("The argument formSlopeRandom must be a formula")
   if(missing(formSurv)) stop("The argument formSurv must be specified")
-  if(class(formSurv)!="formula") stop("The argument formSurv must be a formula")
-  if(class(precision) != "numeric") stop("The argument precision must be a numeric")
+  if(!inherits(class(formSurv),"formula")) stop("The argument formSurv must be a formula")
+  if(!inherits(class(precision) , "numeric")) stop("The argument precision must be a numeric")
   if(!(nb_pointsGK %in% c(7,15))) stop("The argument nb_pointsGK must be equal to 7 or 15.")
   if(length(hazard_baseline) != 1 || !(hazard_baseline %in% c("Weibull", "Splines","Exponential"))) stop("The value of argument 'hazard_baseline' must be of lenght 1 and must be 'Exponential' or 'Weibull' or 'Splines'")
-  if(class(S1)!="numeric") stop("The argument S1 must be a numeric")
-  if(class(S2)!="numeric") stop("The argument S2 must be a numeric")
+  if(!inherits(class(S1),"numeric")) stop("The argument S1 must be a numeric")
+  if(!inherits(class(S2),"numeric")) stop("The argument S2 must be a numeric")
   #if(missing(nb.e.a)) stop("The argument nb.e.a must be specified : it is the number of random effects + 1 when variability_hetero is TRUE")
   #if(class(nb.e.a)!="numeric") stop("The argument nb.e.a must be a numeric : it is the number of random effects + 1 when variability_hetero is TRUE")
   if(hazard_baseline == "Splines" && class(ord.splines) != "numeric") stop("The argument ord.splines must be a numeric : the order of splines for the baseline hazard function")
-  if(class(left_trunc) != "logical") stop("The argument left_trunc (to take into account left truncation/delay entry) must be a logical")
-  if(class(competing_risk) != "logical") stop("The argument competing_risk (to take into account two competing events) must be a logical")
+  if(!inherits(class(left_trunc) , "logical")) stop("The argument left_trunc (to take into account left truncation/delay entry) must be a logical")
+  if(!inherits(class(competing_risk) , "logical")) stop("The argument competing_risk (to take into account two competing events) must be a logical")
   if(competing_risk && missing(formSurv_CR)) stop("The argument formSurv_CR must be specified when the argument competing_risk is TRUE")
-  if(competing_risk && class(formSurv_CR)!="formula") stop("The argument formSurv_CR must be a formula when the argument competing_risk is TRUE")
+  if(competing_risk && !inherits(class(formSurv_CR),"formula")) stop("The argument formSurv_CR must be a formula when the argument competing_risk is TRUE")
   #if(competing_risk && length(sharedtype_CR) != 1 ) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
   #if(competing_risk && !(sharedtype %in% c("RE", "CV", "CVS", "S"))) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
   if(competing_risk && length(hazard_baseline_CR) != 1 ) stop("The value of argument 'hazard_baseline_CR' must be of lenght 1 and must be 'Exponential' or 'Weibull' or 'Splines'")
@@ -617,7 +609,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     ## Covariables :
     binit <- c(binit, alpha)
     if(!is.null(alpha)){
-      print(head(Z))
+      #print(head(Z))
       names_param <- c(names_param, paste(colnames(Z),"",sep = "_"))
     }
     

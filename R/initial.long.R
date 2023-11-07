@@ -15,7 +15,7 @@
 #' }
 #' @importFrom lcmm hlme
 #'
-#' @examples
+
 initial.long <- function(formFixed, formRandom, idVar, data.long1, ncX, nproc = nproc){
 
   long_model <- hlme(fixed = formFixed,

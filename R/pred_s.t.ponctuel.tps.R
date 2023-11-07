@@ -6,15 +6,13 @@
 #' @param window numeric : the side of the prediction window
 #' @param event integer (0, 1 or 2) : the event of interest for the prediction
 #'
-#' @return
-#' @export
 #'
-#' @examples
 pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
   
   newdata <- as.data.frame(newdata)
   table.predyn.ponct <- c()
   #Ncpus <- 40
+  
   #cl <- parallel::makeCluster(Ncpus)
   #doParallel::registerDoParallel(cl)
   #id.pred.to <- unique(newdata[,all.vars(object$control$formGroup)])
@@ -46,7 +44,7 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
     curseur <- 1
     #Evenement 1 :
     ## Risque de base :
-    if(hazard_baseline == "Weibull"){
+    if(object$control$hazard_baseline == "Weibull"){
       #if(scaleWeibull == "square"){
       #  alpha_weib <- param[curseur]**2
       #  curseur <- curseur + 1
@@ -62,31 +60,31 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
       shape <- param[curseur]**2
       curseur <- curseur + 1
     }
-    if(hazard_baseline == "Splines"){
-      gamma <- param[(curseur):(curseur+ord.splines+1)]
-      curseur <- curseur + ord.splines + 2
+    if(object$control$hazard_baseline == "Splines"){
+      gamma <- param[(curseur):(curseur+object$control$ord.splines+1)]
+      curseur <- curseur + object$control$ord.splines + 2
     }
     ## Covariables :
-    if(nb.alpha >=1){
-      alpha <- param[(curseur):(curseur+nb.alpha-1)]
-      curseur <- curseur+nb.alpha
+    if(object$control$nb.alpha >=1){
+      alpha <- param[(curseur):(curseur+object$control$nb.alpha-1)]
+      curseur <- curseur+object$control$nb.alpha
     }
     ## Association :
-    if("current value" %in% sharedtype){
+    if("current value" %in% object$control$sharedtype){
       alpha.current <- param[curseur]
       curseur <- curseur + 1
     }
     else{
       alpha.current <- 0
     }
-    if("slope" %in% sharedtype){
+    if("slope" %in% object$control$sharedtype){
       alpha.slope <- param[curseur]
       curseur <- curseur + 1
     }
     else{
       alpha.slope <- 0
     }
-    if("variability" %in% sharedtype){
+    if("variability" %in% object$control$sharedtype){
       alpha.sigma <- param[curseur]
       curseur <- curseur + 1
     }
@@ -109,9 +107,9 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
     #  curseur <- curseur + 1
     #}
     # Evenement 2
-    if(competing_risk){
+    if(object$control$competing_risk){
       ## Risque de base :
-      if(hazard_baseline_CR == "Weibull"){
+      if(object$control$hazard_baseline_CR == "Weibull"){
         #if(scaleWeibull == "square"){
         #  alpha_weib.CR <- param[curseur]**2
         #  curseur <- curseur + 1
@@ -127,31 +125,31 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
         shape.CR <- param[curseur]**2
         curseur <- curseur + 1
       }
-      if(hazard_baseline_CR == "Splines"){
-        gamma.CR <- param[(curseur):(curseur+ord.splines+1)]
-        curseur <- curseur + ord.splines + 2
+      if(object$control$hazard_baseline_CR == "Splines"){
+        gamma.CR <- param[(curseur):(curseur+object$control$ord.splines+1)]
+        curseur <- curseur + object$control$ord.splines + 2
       }
       ## Covariables :
-      if(nb.alpha.CR >=1){
-        alpha.CR <- param[(curseur):(curseur+nb.alpha.CR-1)]
-        curseur <- curseur+nb.alpha.CR
+      if(object$control$nb.alpha.CR >=1){
+        alpha.CR <- param[(curseur):(curseur+object$control$nb.alpha.CR-1)]
+        curseur <- curseur+object$control$nb.alpha.CR
       }
       ## Association :
-      if("current value" %in% sharedtype_CR){
+      if("current value" %in% object$control$sharedtype_CR){
         alpha.current.CR <- param[curseur]
         curseur <- curseur + 1
       }
       else{
         alpha.current.CR <- 0
       }
-      if("slope" %in% sharedtype_CR){
+      if("slope" %in% object$control$sharedtype_CR){
         alpha.slope.CR <- param[curseur]
         curseur <- curseur + 1
       }
       else{
         alpha.slope <- 0
       }
-      if("variability" %in% sharedtype_CR){
+      if("variability" %in% object$control$sharedtype_CR){
         alpha.sigma.CR <- param[curseur]
         curseur <- curseur + 1
       }
@@ -176,51 +174,51 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
     }
     # Marqueur :
     ## Effets fixes trend :
-    beta <- param[curseur:(curseur+nb.priorMean.beta-1)]
-    if( "slope" %in% sharedtype || "slope" %in% sharedtype_CR){
-      beta_slope <- beta[indices_beta_slope]
+    beta <- param[curseur:(curseur+object$control$nb.priorMean.beta-1)]
+    if( "slope" %in% object$control$sharedtype || "slope" %in% object$control$sharedtype_CR){
+      beta_slope <- beta[object$control$indices_beta_slope]
     }
-    curseur <- curseur+nb.priorMean.beta
+    curseur <- curseur+object$control$nb.priorMean.beta
     ## Effets fixes var :
-    if(variability_hetero){
-      omega <- param[curseur:(curseur+nb.omega-1)]
-      curseur <- curseur + nb.omega
+    if(object$control$variability_hetero){
+      omega <- param[curseur:(curseur+object$control$nb.omega-1)]
+      curseur <- curseur + object$control$nb.omega
     }
     else{
       sigma.epsilon <- param[curseur]
       curseur <- curseur + 1
     }
     ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
-    if(variability_hetero){
-      if(correlated_re){
-        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
-        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+    if(object$control$variability_hetero){
+      if(object$control$correlated_re){
+        borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
+        C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
         C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
-        C2 <- matrix(param[(borne1+1):(borne1+nb.e.a.sigma*nb.e.a)],nrow=nb.e.a.sigma,ncol=nb.e.a, byrow = TRUE)
-        borne2 <- borne1+nb.e.a.sigma*nb.e.a + 1
-        borne3 <- borne2 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma - 1
-        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+        C2 <- matrix(param[(borne1+1):(borne1+object$control$nb.e.a.sigma*object$control$nb.e.a)],nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a, byrow = TRUE)
+        borne2 <- borne1+object$control$nb.e.a.sigma*object$control$nb.e.a + 1
+        borne3 <- borne2 + choose(n = object$control$nb.e.a.sigma, k = 2) + object$control$nb.e.a.sigma - 1
+        C3 <- matrix(rep(0,(object$control$nb.e.a.sigma)**2),nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a.sigma)
         C3[lower.tri(C3, diag=T)] <- param[borne2:borne3]
-        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
+        C4 <- matrix(rep(0,object$control$nb.e.a*object$control$nb.e.a.sigma),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a.sigma)
         MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
         MatCov <- as.matrix(MatCov)
       }
       else{
-        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
-        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+        borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
+        C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
         C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
-        borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
-        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+        borne3 <- borne1 + choose(n = object$control$nb.e.a.sigma, k = 2) + object$control$nb.e.a.sigma
+        C3 <- matrix(rep(0,(object$control$nb.e.a.sigma)**2),nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a.sigma)
         C3[lower.tri(C3, diag=T)] <- param[(borne1+1):borne3]
-        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
-        C2.bis <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a.sigma,ncol=nb.e.a)
+        C4 <- matrix(rep(0,object$control$nb.e.a*object$control$nb.e.a.sigma),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a.sigma)
+        C2.bis <- matrix(rep(0,object$control$nb.e.a*object$control$nb.e.a.sigma),nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a)
         MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
         MatCov <- as.matrix(MatCov)
       }
     }
     else{
-      borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
-      C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+      borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
+      C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
       C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
       MatCov <- C1
     }
@@ -319,9 +317,9 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
           Z <- model.matrix(object$control$formSurv, mfZ)
           Z <- Z[,-1]
           Bs <- splines::splineDesign(object$control$knots.hazard_baseline.splines, c(t(st.1)), ord = 4L)
-          if(object$control$left_trunc){
-            Bs.0 <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
-          }
+         # if(object$control$left_trunc){
+         #   Bs.0 <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
+         # }
         }else{
           stop("This type of base survival function is not implemented.")
         }
@@ -344,9 +342,9 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
             Z_CR <- model.matrix(object$control$formSurv_CR, mfZ.CR)
             Z_CR <- Z_CR[,-1]
             Bs.CR <- splines::splineDesign(object$control$knots.hazard_baseline.splines.CR, c(t(st.1)), ord = 4L)
-            if(object$control$left_trunc){
-              Bs.0.CR <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
-            }
+           # if(object$control$left_trunc){
+           #   Bs.0.CR <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
+           # }
           }else{
             stop("This type of base survival function is not implemented.")
           }
@@ -469,9 +467,9 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
             Z <- model.matrix(object$control$formSurv, mfZ)
             Z <- Z[,-1]
             Bs.2 <- splines::splineDesign(object$control$knots.hazard_baseline.splines, c(t(st.2)), ord = 4L)
-            if(object$control$left_trunc){
-              Bs.0 <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
-            }
+            #if(object$control$left_trunc){
+            #  Bs.0 <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
+            #}
           }else{
             stop("This type of base survival function is not implemented.")
           }
@@ -511,9 +509,9 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
               Z_CR <- model.matrix(object$control$formSurv_CR, mfZ.CR)
               Z_CR <- Z_CR[,-1]
               Bs.CR.2 <- splines::splineDesign(object$control$knots.hazard_baseline.splines.CR, c(t(st.2)), ord = 4L)
-              if(object$control$left_trunc){
-                Bs.0.CR <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
-              }
+             # if(object$control$left_trunc){
+             #   Bs.0.CR <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
+             # }
             }else{
               stop("This type of base survival function is not implemented.")
             }
@@ -556,40 +554,6 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
         }
       }
       
-      #else{
-      #  if(object$control$sharedtype %in% c("CV")|| (object$control$competing_risk && object$control$sharedtype_CR %in% c("CV"))){
-      #    current.GK.2 <- matrix(rep(beta%*%t(Xs.2),object$control$S2),nrow=object$control$S2,byrow = T)+ b_al%*%t(Us.2)
-      #    if(object$control$sharedtype %in% c("CV")){
-      #      h.2.1 <- h.2.1*exp(alpha.current*current.GK.2)
-      #    }
-      #    if((object$control$competing_risk && object$control$sharedtype_CR %in% c("CV"))){
-      #      h.2.2 <- h.2.2*exp(alpha.current.CR*current.GK.2)
-      #    }
-      #  }
-      #  if(object$control$sharedtype %in% c("CVS")|| (object$control$competing_risk && object$control$sharedtype_CR %in% c("CVS"))){
-      #    current.GK.2 <- matrix(rep(beta%*%t(Xs.2),object$control$S2),nrow=object$control$S2,byrow = T)+ b_al%*%t(Us.2)
-      #    slope.GK.2 <- matrix(rep(beta[object$control$indices_beta_slope]%*%t(Xs.slope.2),object$control$S2),nrow=object$control$S2,byrow = T)+ b_al[,-1]%*%t(Us.slope.2)
-      #    if(object$control$sharedtype %in% c("CVS")){
-      #      h.2.1 <- h.2.1*exp(alpha.current*current.GK.2)
-      #      h.2.1 <- h.2.1*exp(alpha.slope*slope.GK.2)
-      #    }
-      #    if((object$control$competing_risk && object$control$sharedtype_CR %in% c("CVS"))){
-      #      h.2.2 <- h.2.2*exp(alpha.current.CR*current.GK.2)
-      #      h.2.2 <- h.2.2*exp(alpha.slope.CR*slope.GK.2)
-      #    }
-      #  }
-      #  if(object$control$sharedtype %in% c("S")|| (object$control$competing_risk && object$control$sharedtype_CR %in% c("S"))){
-      #    slope.GK.2 <- matrix(rep(beta[object$control$indices_beta_slope]%*%t(Xs.slope.2),object$control$S2),nrow=object$control$S2,byrow = T)+ b_al[,-1]%*%t(Us.slope.2)
-      #    if(object$control$sharedtype %in% c("S")){
-      #      h.2.1 <- h.2.1*exp(alpha.slope*slope.GK.2)
-      #      
-      #    }
-      #    if((object$control$competing_risk && object$control$sharedtype_CR %in% c("S"))){
-      #      h.2.2 <- h.2.2*exp(alpha.slope.CR*slope.GK.2)
-      #    }
-      #  }
-      #}
-      
       ###h0
       if(object$control$hazard_baseline == "Exponential"){
         h_0.GK.2 <- wk.2
@@ -617,7 +581,7 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
         if(object$control$hazard_baseline_CR == "Weibull"){
           h_0.GK.2.CR <- shape.CR*(st.2**(shape.CR-1))*wk.2
         }
-        if(object$control$hazard_baseline == "Splines"){
+        if(object$control$hazard_baseline_CR == "Splines"){
           mat_h0s <- matrix(gamma.CR,ncol=1)
           h_0.GK.2.CR <- (wk.2*exp(Bs.CR.2%*%mat_h0s))
         }
@@ -695,7 +659,7 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
       if((c("random effect") %in% object$control$sharedtype_CR)){
         stop("Not implemented yet")
       }else{
-        list.GaussKronrod <- data.GaussKronrod(data.long.until.time.s.id, s, k = nb_pointsGK)
+        list.GaussKronrod <- data.GaussKronrod(data.long.until.time.s.id, s, k = object$control$nb_pointsGK)
         wk.den <- list.GaussKronrod$wk
         st_calc.den <- list.GaussKronrod$st
         P.den <- list.GaussKronrod$P
@@ -745,12 +709,12 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
         survLong_CR <- survLong_CR + alpha.current.CR*current.GK
       }
     }
-    if((c("slope") %in% object$control$sharedtype)|| (c("slope") %in% object$control$sharedtype)){
+    if((c("slope") %in% object$control$sharedtype)|| (c("slope") %in% object$control$sharedtype_CR)){
       slope.GK <- matrix(rep(beta[object$control$indices_beta_slope]%*%t(Xs.slope.den),object$control$S2),nrow=object$control$S2,byrow = T) + b_al[,-1]%*%t(Us.slope.den)
       if((c("slope") %in% object$control$sharedtype)){
         survLong <- survLong + alpha.slope*slope.GK
       }
-      if(object$control$competing_risk && (c("slope") %in% object$control$sharedtype)){
+      if(object$control$competing_risk && (c("slope") %in% object$control$sharedtype_CR)){
         survLong_CR <- survLong_CR + alpha.slope.CR*slope.GK
       }
     }
@@ -794,18 +758,10 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
       }
       if(object$control$hazard_baseline_CR == "Weibull"){
         h_0.GK.CR <- shape.CR*(st_calc.den**(shape.CR-1))*wk.den
-        #if(left_trunc){
-        #  st.0_i <- st.0[i,]
-        #  h_0.GK.0_CR <- shape.CR*(st.0_i**(shape.CR-1))*wk
-        #}
       }
       if(object$control$hazard_baseline_CR == "Splines"){
         mat_h0s.CR <- matrix(gamma.CR,ncol=1)
         h_0.GK.CR <- (wk.den*exp(Bs.CR.den%*%mat_h0s.CR))
-        #if(left_trunc){
-        #  Bs.0.CR_i <- Bs.0.CR[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-        #  h_0.GK.0_CR <- (wk*exp(Bs.0.CR_i%*%mat_h0s.CR))
-        #}
       }
       
       ###hazard function
@@ -815,9 +771,6 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
         pred_surv.CR <- (alpha.CR%*%Z_CR)[1,1]
       }
       etaBaseline_CR <- etaBaseline_CR + pred_surv.CR
-      #if(left_trunc){
-      #  etaBaseline.0_CR <- etaBaseline.0_CR + pred_surv.CR
-      #}
       
       ###GK integration
       survLong_CR <- exp(survLong_CR)

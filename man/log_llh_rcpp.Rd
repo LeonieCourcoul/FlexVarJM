@@ -95,6 +95,8 @@ log_llh_rcpp(
 
 \item{hazard_baseline_CR}{char : baseline hazard function, competing risk : "Exponential" or "Weibull" or "Splines"}
 
+\item{ord.splines}{integer : the order of splines function for baseline hazard function}
+
 \item{Xtime}{matrix : fixed effects at event time}
 
 \item{Utime}{matrix : RE at event time}
@@ -167,7 +169,27 @@ log_llh_rcpp(
 
 \item{Bs.0.CR}{same for left truncation}
 
-\item{nb.knots.splines}{integer : the order of splines function for baseline hazard function}
+\item{nb.e.a.sigma}{integer : number of RE for variability}
+
+\item{nb.omega}{integer : number of fixed effects for variability}
+
+\item{Otime}{matrix : fixed effects of variability at event time}
+
+\item{Wtime}{matrix : RE of variability at event time}
+
+\item{Os}{matrix : fixed effects of variability at Gauss-Kronrod times}
+
+\item{Ws}{matrix : random effects of variability at Gauss-Kronrod times}
+
+\item{O_base}{matrix : fixed effects for variability}
+
+\item{W_base}{matrix : fixed effects for variability}
+
+\item{correlated_re}{boolean : indicator to allow all the random effects to be correlated}
+
+\item{Os.0}{matrix : same for left truncation}
+
+\item{Ws.0}{matrix : same for left truncation}
 }
 \value{
 The value of the log-likelihood

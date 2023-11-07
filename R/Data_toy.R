@@ -1,6 +1,6 @@
 #'  Data_toy
 #'
-#' A simulated dataset for the exemple of the FlexVar_JM function.
+#' A simulated dataset for the example of the FlexVarJM package.
 #'
 #' @format A data frame with 2076 rows and 5 variables:
 #' \describe{
@@ -9,6 +9,7 @@
 #'   \item{y}{the value of the marker}
 #'   \item{time}{the time of the first event observed}
 #'   \item{event}{the first event observed : 0 = censoring, 1 = first event, 2 = second event}
+#'   \item{binary}{a binary variable (0 or 1)}
 #' }
 #'
 "Data_toy"

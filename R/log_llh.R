@@ -58,15 +58,14 @@
 #' @param W_base matrix : fixed effects for variability
 #' @param Os.0 matrix : same for left truncation
 #' @param Ws.0 matrix : same for left truncation
-#' @param ne.e.a.sigma integer : number of RE for variability
-#' @param ne.omega integer : number of fixed effects for variability
+#' @param nb.e.a.sigma integer : number of RE for variability
+#' @param nb.omega integer : number of fixed effects for variability
 #' @param correlated_re boolean : indicator to allow all the random effects to be correlated
 #' 
 #'
 #' @return The value of the log-likelihood
-#' @export
 #'
-#' @examples
+
 log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
                     nb.alpha.CR, variability_hetero, S,Zq, sharedtype, sharedtype_CR,
                     hazard_baseline, hazard_baseline_CR, ord.splines, Xtime, Utime, nb_pointsGK,
@@ -107,18 +106,18 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     curseur <- curseur+nb.alpha
   }
   ## Association :
-  if(sharedtype %in% c("RE")){
+  if("random effects" %in% sharedtype){
     stop("Not implemented yet")
   }
-  if(sharedtype %in% c("CV","CVS")){
+  if("current value" %in% sharedtype){
     alpha.current <- param[curseur]
     curseur <- curseur + 1
   }
-  if(sharedtype %in%  c("CVS","S")){
+  if("slope" %in% sharedtype){
     alpha.slope <- param[curseur]
     curseur <- curseur + 1
   }
-  if(variability_hetero){
+  if("variability" %in% sharedtype){
     alpha.sigma <- param[curseur]
     curseur <- curseur + 1
   }
@@ -151,18 +150,18 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       curseur <- curseur+nb.alpha.CR
     }
     ## Association :
-    if(sharedtype_CR %in% c("RE")){
+    if("random effects" %in% sharedtype_CR){
       stop("Not implemented yet")
     }
-    if(sharedtype_CR %in% c("CV","CVS")){
+    if("current value" %in% sharedtype_CR){
       alpha.current.CR <- param[curseur]
       curseur <- curseur + 1
     }
-    if(sharedtype_CR %in%  c("CVS","S")){
+    if("slope" %in% sharedtype_CR){
       alpha.slope.CR <- param[curseur]
       curseur <- curseur + 1
     }
-    if(variability_hetero){
+    if("variability" %in% sharedtype){
       alpha.sigma.CR <- param[curseur]
       curseur <- curseur + 1
     }
@@ -233,27 +232,23 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     survLong <- 0
     etaBaseline.0 <- 0
     survLong.0 <- 0
-    if(variability_hetero){
+    if(("variability" %in% sharedtype) || (competing_risk && "variability" %in% sharedtype_CR)){
       #browser()
       Otime_i <- Otime[i,]
       Wtime_i <- Wtime[i,]
       Os_i <- Os[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
       Ws_i <- Ws[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-      #if(length(Wtime_i)==1){
-      #  Sigma.CV <- exp((omega%*%Otime_i)[1,1]+b_om*Wtime_i)
-      #}
-      #else{
-      #  Sigma.CV <- exp((omega%*%Otime_i)[1,1]+b_om%*%Wtime_i)
-      #}
       Sigma.CV <- exp((omega%*%Otime_i)[1,1]+b_om%*%Wtime_i)
       Sigma.current.GK <- exp(matrix(rep(omega%*%t(Os_i),S),nrow=S,byrow = T) + b_om%*%t(Ws_i))
-      h <- h*exp(alpha.sigma*Sigma.CV)
-      survLong <- survLong + alpha.sigma*Sigma.current.GK
-      if(left_trunc){
-        Os.0_i <- Os.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-        Ws.0_i <- Ws.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
-        Sigma.current.GK.0 <- exp(matrix(rep(omega%*%t(Os.0_i),S),nrow=S,byrow = T) + b_om%*%t(Ws.0_i))
-        survLong.0 <- survLong.0 + alpha.sigma*Sigma.current.GK.0
+      if("variability" %in% sharedtype){
+        h <- h*exp(alpha.sigma*Sigma.CV)
+        survLong <- survLong + alpha.sigma*Sigma.current.GK
+        if(left_trunc){
+          Os.0_i <- Os.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+          Ws.0_i <- Ws.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
+          Sigma.current.GK.0 <- exp(matrix(rep(omega%*%t(Os.0_i),S),nrow=S,byrow = T) + b_om%*%t(Ws.0_i))
+          survLong.0 <- survLong.0 + alpha.sigma*Sigma.current.GK.0
+        }
       }
     }
     
@@ -263,7 +258,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
       survLong_CR <- 0
       etaBaseline.0_CR <- 0
       survLong.0_CR <- 0
-      if(variability_hetero){
+      if("variability" %in% sharedtype_CR){
         h_CR <- h_CR*exp(alpha.sigma.CR*Sigma.CV)
         survLong_CR <- survLong_CR + alpha.sigma.CR*Sigma.current.GK
         if(left_trunc){
@@ -271,7 +266,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
         }
       }
     }
-    if(sharedtype %in% c("CV","CVS") || (competing_risk && sharedtype_CR %in% c("CV","CVS")) ){
+    if(("current value" %in% sharedtype) || (competing_risk && "current value" %in% sharedtype_CR) ){
       Xtime_i <- Xtime[i,]
       Utime_i <- Utime[i,]
       Xs_i <- Xs[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
@@ -283,14 +278,14 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
         Us.0_i <- Us.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
         current.GK.0 <- matrix(rep(beta%*%t(Xs.0_i),S),nrow=S,byrow = T) + b_al%*%t(Us.0_i)
       }
-      if(sharedtype %in% c("CV","CVS")){
+      if("current value" %in% sharedtype){
         h <- h*exp(alpha.current*CV)
         survLong <- survLong + alpha.current*current.GK
         if(left_trunc){
           survLong.0 <- survLong.0 + alpha.current*current.GK.0
         }
       }
-      if(competing_risk && sharedtype_CR %in% c("CV","CVS")){
+      if(competing_risk && "current value" %in% sharedtype_CR){
         h_CR <- h_CR*exp(alpha.current.CR*CV)
         survLong_CR <- survLong_CR + alpha.current.CR*current.GK
         if(left_trunc){
@@ -298,7 +293,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
         }
       }
     }
-    if(sharedtype %in% c("CVS","S") || (competing_risk && sharedtype_CR %in% c("CVS","S") )){
+    if(("slope" %in% sharedtype) || (competing_risk && "slope" %in% sharedtype_CR)){
       Xslope_i <- Xslope[i,]
       Uslope_i <- Uslope[i,]
       Xs.slope_i <- Xs.slope[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
@@ -315,14 +310,14 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
         Us.slope.0_i <- Us.slope.0[(nb_pointsGK*(i-1)+1):(nb_pointsGK*i),]
         slope.GK.0 <- matrix(rep(beta[indices_beta_slope]%*%t(Xs.slope.0_i),S),nrow=S,byrow = T) + b_al[,-1]%*%t(Us.slope.0_i)
       }
-      if(sharedtype %in% c("CVS","S")){
+      if("slope" %in% sharedtype){
         h <- h*exp(alpha.slope*slope)
         survLong <- survLong + alpha.slope*slope.GK
         if(left_trunc){
           survLong.0 <- survLong.0 + alpha.slope*slope.GK.0
         }
       }
-      if(competing_risk && sharedtype_CR %in% c("CVS","S") ){
+      if(competing_risk && "slope" %in% sharedtype_CR){
         h_CR <- h_CR*exp(alpha.slope.CR*slope)
         survLong_CR <- survLong_CR + alpha.slope.CR*slope.GK
         if(left_trunc){

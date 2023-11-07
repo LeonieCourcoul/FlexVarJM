@@ -153,7 +153,7 @@ summary.lsjm <- function(object,...)
       alpha.slope.CR.name <- param.names[curseur]
       curseur <- curseur + 1
     }
-    if(c("variability") %in% x$control$sharedtype){
+    if(c("variability") %in% x$control$sharedtype_CR){
       alpha.sigma.CR <- param[curseur]
       alpha.sigma.CR.se <- param.se[curseur]
       alpha.sigma.CR.name <- param.names[curseur]

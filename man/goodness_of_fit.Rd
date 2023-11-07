@@ -13,6 +13,52 @@ goodness_of_fit(object, graph = F, break.times = NULL)
 
 \item{break.times}{a vector of times for the time points of longitudinal graphic}
 }
+\value{
+A list which contains the following elements :
+\describe{
+\item{\code{tables}}{A list with the table of the predicted random effect, the table of the predicted current value, table(s) of predictive cumulative hazard function(s)}
+\item{\code{graphs}}{A list with 2 or 3 graphs : one for the longitudinal adjustment and one for each risk function}
+
+}
+}
 \description{
 Predictions for the goodness of fit, of the random effects, the current value for each individuals and the cumulative hazard function for both events
+}
+\examples{
+
+if(interactive()){
+
+#Fit a joint model with competing risks and subaject-specific variability
+example <- lsjm(formFixed = y~visit+binary,
+formRandom = ~ visit,
+formGroup = ~ID,
+formSurv = Surv(time, event ==1 ) ~ binary,
+timeVar = "visit",
+data.long = Data_toy,
+variability_hetero = TRUE,
+formFixedVar =~visit,
+formRandomVar =~visit,
+correlated_re = TRUE,
+sharedtype = c("current value", "variability"),
+hazard_baseline = "Splines",
+formSlopeFixed =~1,
+formSlopeRandom = ~1,
+indices_beta_slope = c(2), 
+competing_risk = TRUE,
+formSurv_CR = Surv(time, event ==2 ) ~ 1,
+hazard_baseline_CR = "Weibull",
+sharedtype_CR = c("slope"),
+S1 = 100,
+S2 = 1000,
+nproc = 5,
+maxiter = 100,
+Comp.Rcpp = TRUE
+)
+
+#Assesment of the goodness of fit:
+gof <- goodness_of_fit(example, graph = T)
+gof$tables
+gof$graphs
+}
+
 }

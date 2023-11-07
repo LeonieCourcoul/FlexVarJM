@@ -4,10 +4,50 @@
 #' @param graph a boolean to indicate to print graphics, False by default
 #' @param break.times a vector of times for the time points of longitudinal graphic
 #'
-#' @return
+#' @return A list which contains the following elements :
+#' \describe{
+#' \item{\code{tables}}{A list with the table of the predicted random effect, the table of the predicted current value, table(s) of predictive cumulative hazard function(s)}
+#' \item{\code{graphs}}{A list with 2 or 3 graphs : one for the longitudinal adjustment and one for each risk function}
+#'
+#' }
 #' @export
 #'
 #' @examples
+#' 
+#' if(interactive()){
+#'
+#' #Fit a joint model with competing risks and subaject-specific variability
+#' example <- lsjm(formFixed = y~visit+binary,
+#' formRandom = ~ visit,
+#' formGroup = ~ID,
+#' formSurv = Surv(time, event ==1 ) ~ binary,
+#' timeVar = "visit",
+#' data.long = Data_toy,
+#' variability_hetero = TRUE,
+#' formFixedVar =~visit,
+#' formRandomVar =~visit,
+#' correlated_re = TRUE,
+#' sharedtype = c("current value", "variability"),
+#' hazard_baseline = "Splines",
+#' formSlopeFixed =~1,
+#' formSlopeRandom = ~1,
+#' indices_beta_slope = c(2), 
+#' competing_risk = TRUE,
+#' formSurv_CR = Surv(time, event ==2 ) ~ 1,
+#' hazard_baseline_CR = "Weibull",
+#' sharedtype_CR = c("slope"),
+#' S1 = 100,
+#' S2 = 1000,
+#' nproc = 5,
+#' maxiter = 100,
+#' Comp.Rcpp = TRUE
+#' )
+#' 
+#' #Assesment of the goodness of fit:
+#' gof <- goodness_of_fit(example, graph = T)
+#' gof$tables
+#' gof$graphs
+#' }
 #'
 goodness_of_fit <- function(object, graph = F, break.times = NULL){
   x <- object
@@ -91,7 +131,7 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
   #Dependence
   data.id <- data.long[!duplicated(id),]
   data.id <- cbind(data.id,event1)
-  if(x$control$sharedtype %in% c("random effects")){
+  if(c("random effects") %in% x$control$sharedtype){
     stop("Not implemented yet")
   }
   else{
@@ -105,7 +145,7 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
       st.0 <- list.GaussKronrod.0$st
       P.0 <- list.GaussKronrod.0$P
     }
-    if(x$control$sharedtype %in% c("CV","CVS")){
+    if(c("current value") %in% x$control$sharedtype){
       list.data.current.time <- data.time(data.id, list.surv$Time, x$control$formFixed, x$control$formRandom,x$control$timeVar)
       list.data.GK.current <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                         x$control$formFixed, x$control$formRandom,x$control$timeVar)
@@ -120,7 +160,7 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
         Us.0 <- list.data.GK.current.0$Utime
       }
     }
-    if(x$control$sharedtype %in% c("CVS","S")){
+    if(c("slope") %in% x$control$sharedtype){
       list.data.slope.time <- data.time(data.id, list.surv$Time, x$control$formSlopeFixed, x$control$formSlopeRandom,x$control$timeVar)
       list.data.GK.slope <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                       x$control$formSlopeFixed, x$control$formSlopeRandom,x$control$timeVar)
@@ -170,7 +210,7 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
   nb.alpha.CR <- 0
   if(x$control$competing_risk){
     data.id <- cbind(data.id,event2)
-    if(x$control$sharedtype_CR %in% c("random effects")){
+    if(c("random effects") %in% x$control$sharedtype_CR){
       stop("Not implemented yet")
     }
     else{
@@ -184,7 +224,7 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
         st.0 <- list.GaussKronrod.0$st
         P.0 <- list.GaussKronrod.0$P
       }
-      if(x$control$sharedtype_CR %in% c("CV","CVS")){
+      if(c("current value") %in% x$control$sharedtype_CR){
         list.data.current.time <- data.time(data.id, list.surv$Time, x$control$formFixed, x$control$formRandom,x$control$timeVar)
         list.data.GK.current <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                           x$control$formFixed, x$control$formRandom,x$control$timeVar)
@@ -199,7 +239,7 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
           Us.0 <- list.data.GK.current.0$Utime
         }
       }
-      if(x$control$sharedtype_CR %in% c("CVS","S")){
+      if(c("slope") %in% x$control$sharedtype_CR){
         list.data.slope.time <- data.time(data.id, list.surv$Time, x$control$formSlopeFixed, x$control$formSlopeRandom,x$control$timeVar)
         list.data.GK.slope <- data.time(list.GaussKronrod$data.id2, c(t(list.GaussKronrod$st)),
                                         x$control$formSlopeFixed, x$control$formSlopeRandom,x$control$timeVar)
@@ -247,7 +287,7 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
       }
     }
   }
-  if(x$control$variability_hetero){
+  if(c("variability") %in% x$control$sharedtype){
     list.GaussKronrod <- data.GaussKronrod(data.id, list.surv$Time, k = x$control$nb_pointsGK)
     wk <- list.GaussKronrod$wk
     st_calc <- list.GaussKronrod$st
@@ -293,18 +333,18 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
     curseur <- curseur+x$control$nb.alpha
   }
   ## Association :
-  if(x$control$sharedtype %in% c("RE")){
+  if(c("random effects") %in% x$control$sharedtype){
     stop("Not implemented yet")
   }
-  if(x$control$sharedtype %in% c("CV","CVS")){
+  if(c("current value") %in% x$control$sharedtype){
     alpha.current <- estim_param[curseur]
     curseur <- curseur + 1
   }
-  if(x$control$sharedtype %in%  c("CVS","S")){
+  if(c("slope") %in% x$control$sharedtype){
     alpha.slope <- estim_param[curseur]
     curseur <- curseur + 1
   }
-  if(x$control$variability_hetero){
+  if(c("variability") %in% x$control$sharedtype){
     alpha.sigma <- estim_param[curseur]
     curseur <- curseur + 1
   }
@@ -337,18 +377,18 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
       curseur <- curseur+x$control$nb.alpha.CR
     }
     ## Association :
-    if(x$control$sharedtype %in% c("RE")){
+    if(c("random effects") %in% x$control$sharedtype_CR){
       stop("Not implemented yet")
     }
-    if(x$control$sharedtype %in% c("CV","CVS")){
+    if(c("current value") %in% x$control$sharedtype_CR){
       alpha.current.CR <- estim_param[curseur]
       curseur <- curseur + 1
     }
-    if(x$control$sharedtype %in%  c("CVS","S")){
+    if(c("slope") %in% x$control$sharedtype_CR){
       alpha.slope.CR <- estim_param[curseur]
       curseur <- curseur + 1
     }
-    if(x$control$variability_hetero){
+    if(c("variability") %in% x$control$sharedtype_CR){
       alpha.sigma.CR <- estim_param[curseur]
       curseur <- curseur + 1
     }
@@ -493,20 +533,19 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
     #print("Survival part")
     
     for(j in 1:nrow(st_calc.sort.unique)){
-      
-      if(x$control$variability_hetero){
+      pred_haz <- 0
+      if((c("variability") %in% x$control$sharedtype)|| (x$control$competing_risk && c("variability") %in% x$control$sharedtype_CR) ){
         list.data.GK.current.sigma.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[(x$control$nb_pointsGK*(i-1)+1):(x$control$nb_pointsGK*i),], st_calc.sort.unique[j,],
                                                             x$control$formFixedVar, x$control$formRandomVar,x$control$timeVar)
         Os.j <- list.data.GK.current.sigma.sort.unique$Xtime
         Ws.j <- list.data.GK.current.sigma.sort.unique$Utime
         Sigma.current.GK <- exp(omega%*%t(Os_i) + pred.r.e$b[(x$control$nb.e.a+1):(x$control$nb.e.a+x$control$nb.e.a.sigma)]%*%t(Ws_i))
-        pred_haz <- alpha.sigma*Sigma.current.GK
-      }
-      else{
-        pred_haz <- 0
+        if(c("variability") %in% x$control$sharedtype){
+          pred_haz <- pred_haz +  alpha.sigma*Sigma.current.GK
+        }
       }
       
-      if(x$control$sharedtype %in% c("CV","CVS") || (x$control$competing_risk && x$control$sharedtype_CR %in% c("CV","CVS")) ){
+      if((c("current value") %in% x$control$sharedtype) || (x$control$competing_risk && c("current value") %in% x$control$sharedtype_CR) ){
         
         list.data.GK.current.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[(x$control$nb_pointsGK*(i-1)+1):(x$control$nb_pointsGK*i),], st_calc.sort.unique[j,],
                                                       x$control$formFixed, x$control$formRandom,x$control$timeVar)
@@ -516,12 +555,12 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
         
         current.GK <-beta%*%t(Xs.j) + pred.r.e$b[1:(x$control$nb.e.a)]%*%t(Us.j)
         
-        if(x$control$sharedtype %in% c("CV","CVS")){
+        if(c("current value") %in% x$control$sharedtype){
           pred_haz <- pred_haz +  alpha.current*current.GK
         }
       }
       
-      if(x$control$sharedtype %in% c("CVS","S") || (x$control$competing_risk && x$control$sharedtype_CR %in% c("CVS","S") )){
+      if((c("slope") %in% x$control$sharedtype)|| (x$control$competing_risk && c("slope") %in% x$control$sharedtype_CR)){
         list.data.GK.slope.sort.unique <- data.time(data.GaussKronrod.sort.unique$data.id2[(x$control$nb_pointsGK*(i-1)+1):(x$control$nb_pointsGK*i),], st_calc.sort.unique[j,],
                                                     x$control$formSlopeFixed, x$control$formSlopeRandom,x$control$timeVar)
         
@@ -530,7 +569,7 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
         
         slope.GK <- beta[x$control$indices_beta_slope]%*%t(Xs.slope.j) +  pred.r.e$b[2:(x$control$nb.e.a)]%*%t(Us.slope.j)
         
-        if(x$control$sharedtype %in% c("CVS","S")){
+        if(c("slope") %in% x$control$sharedtype){
           pred_haz <- pred_haz +  alpha.slope*slope.GK
         }
       }
@@ -565,18 +604,18 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
       Cum_risk_1i <- c(Cum_risk_1i, P.sort.unique[j]*sum(exp(pred_haz)%*%h_0.GK))
       
       if(x$control$competing_risk){
-        if(x$control$variability_hetero){
+        if(c("variability") %in% x$control$sharedtype_CR){
           pred_haz.CR <- alpha.sigma.CR*Sigma.current.GK
         }
         else{
           pred_haz.CR <- 0
         }
         
-        if(x$control$sharedtype %in% c("CV","CVS")){
+        if(c("current value") %in% x$control$sharedtype_CR){
           pred_haz.CR <- pred_haz.CR + alpha.current.CR*current.GK
         }
         
-        if(x$control$sharedtype %in% c("CVS","S")){
+        if(c("slope") %in% x$control$sharedtype_CR){
           pred_haz.CR <- pred_haz.CR + alpha.slope.CR*slope.GK
         }
         
@@ -621,7 +660,7 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
   if(graph){
     timeInterv <- range(data.long[,x$control$timeVar])
     if(is.null(break.times)) break.times <- quantile(timeInterv,prob=seq(0,1,length.out=10))
-    graphs <- plot.goodnessoffit(data.long,data.id,pred.CV,break.times, formFixed = x$control$formFixed, formSurv = x$control$formSurv,
+    graphs <- plot_goodnessoffit(data.long,data.id,pred.CV,break.times, formFixed = x$control$formFixed, formSurv = x$control$formSurv,
                                  timeVar = x$control$timeVar,Cum_risk1, competing_risk = x$control$competing_risk, formSurv_CR = x$control$formSurv_CR, Cum_risk2)
   }
   

@@ -1,53 +1,3 @@
-#' Function to predict the random effects
-#'
-#' @param param
-#' @param nb.e.a
-#' @param X_base_i
-#' @param beta
-#' @param U_i
-#' @param y_i
-#' @param Sigma.b
-#' @param mu.log.sigma
-#' @param tau.log.sigma
-#' @param variability_hetero
-#' @param alpha.sigma
-#' @param competing_risk
-#' @param alpha.sigma.CR
-#' @param sharedtype
-#' @param sharedtype_CR
-#' @param Xtime_i
-#' @param Utime_i
-#' @param Xs_i
-#' @param Us_i
-#' @param alpha.current
-#' @param alpha.current.CR
-#' @param hazard_baseline
-#' @param wk
-#' @param shape
-#' @param Time_i
-#' @param st_i
-#' @param gamma
-#' @param B_i
-#' @param Bs_i
-#' @param Z_i
-#' @param alpha
-#' @param P_i
-#' @param hazard_baseline_CR
-#' @param shape.CR
-#' @param gamma.CR
-#' @param B.CR_i
-#' @param Bs.CR_i
-#' @param Z.CR_i
-#' @param alpha.CR
-#' @param event1_i
-#' @param event2_i
-#'
-#' @return
-#'
-#' @examples
-#'
-
-
 pred.re <- function(param, nb.e.a = NULL, variability_hetero = NULL, nb.e.a.sigma = NULL,
                        Sigma.re = NULL, X_base_i = NULL, U_i = NULL, beta = NULL, omega = NULL, O_base_i = NULL,
                        W_base_i = NULL, y_i = NULL, sigma.epsilon = NULL, Otime_i = NULL, Wtime_i = NULL,
@@ -104,7 +54,7 @@ pred.re <- function(param, nb.e.a = NULL, variability_hetero = NULL, nb.e.a.sigm
   etaBaseline.0 <- 0
   survLong.0 <- 0
   # variability
-  if(variability_hetero){
+  if("variability" %in% sharedtype){
     Sigma.CV <- exp((omega%*%Otime_i)[1,1] + tau_re%*%Wtime_i)
     Sigma.current.GK <- exp(omega%*%t(Os_i) + tau_re%*%t(Ws_i))
     h <- h*exp(alpha.sigma*Sigma.CV)
@@ -116,26 +66,28 @@ pred.re <- function(param, nb.e.a = NULL, variability_hetero = NULL, nb.e.a.sigm
     survLong_CR <- 0
     etaBaseline.0_CR <- 0
     survLong.0_CR <- 0
-    if(variability_hetero){
+    if("variability" %in% sharedtype_CR){
+      Sigma.CV <- exp((omega%*%Otime_i)[1,1] + tau_re%*%Wtime_i)
+      Sigma.current.GK <- exp(omega%*%t(Os_i) + tau_re%*%t(Ws_i))
       h_CR <- h_CR*exp(alpha.sigma.CR*Sigma.CV)
       survLong_CR <- survLong_CR + alpha.sigma.CR*Sigma.current.GK
     }
   }
   # current value
-  if(sharedtype %in% c("CV","CVS") || (competing_risk && sharedtype_CR %in% c("CV","CVS"))){
+  if( ("current value" %in% sharedtype) || (competing_risk && "current value" %in% sharedtype_CR)){
     CV <- (beta%*%Xtime_i)[1,1]+b_re%*%Utime_i
     current.GK <- beta%*%t(Xs_i) + b_re%*%t(Us_i)
-    if(sharedtype %in% c("CV","CVS")){
+    if("current value" %in% sharedtype){
       h <- h*exp(alpha.current*CV)
       survLong <- survLong + alpha.current*current.GK
     }
-    if(competing_risk && sharedtype_CR %in% c("CV","CVS")){
+    if(competing_risk && "current value" %in% sharedtype_CR){
       h_CR <- h_CR*exp(alpha.current.CR*CV)
       survLong_CR <- survLong_CR + alpha.current.CR*current.GK
     }
   }
   # slope
-  if(sharedtype %in% c("CVS","S") || (competing_risk && sharedtype_CR %in% c("CVS","S"))){
+  if( ("slope" %in% sharedtype) || (competing_risk && "slope" %in% sharedtype_CR)){
     slope.GK <- beta[indices_beta_slope]%*%t(Xs.slope_i) + b_re[-1]%*%t(Us.slope_i)
     if(length(indices_beta_slope) == 1){
       slope <- (beta[indices_beta_slope]%*%Xslope_i)[1,1]+b_re[-1]*Uslope_i
@@ -143,11 +95,11 @@ pred.re <- function(param, nb.e.a = NULL, variability_hetero = NULL, nb.e.a.sigm
     else{
       slope <- (beta[indices_beta_slope]%*%Xslope_i)[1,1]+b_re[-1]%*%Uslope_i
     }
-    if(sharedtype %in% c("CVS","S")){
+    if("slope" %in% sharedtype){
       h <- h*exp(alpha.slope*slope)
       survLong <- survLong + alpha.slope*slope.GK
     }
-    if(competing_risk && sharedtype_CR %in% c("CVS","S")){
+    if("slope" %in% sharedtype_CR){
       h_CR <- h_CR*exp(alpha.slope.CR*CV)
       survLong_CR <- survLong_CR + alpha.slope.CR*slope.GK
     }

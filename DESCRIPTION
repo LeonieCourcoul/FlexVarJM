@@ -1,34 +1,30 @@
 Package: FlexVarJM
-Title: Estimate Joint Models with subject-specific variance
-Version: 0.0.0.9000
+Title: Estimate Joint Models with Subject-Specific Variance
+Version: 0.1.0
 Authors@R: 
-    person("Léonie", "Courcoul", , "leonie.courcoul@u-bordeaux.fr", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: This package allows to estimate joint models with a subject-specific variance.
+    c(person("Léonie", "Courcoul", email ="leonie.courcoul@u-bordeaux.fr", role = c("aut", "cre")),
+    person("Antoine", "Barbieri", ,email = "antoine.barbieri@u-bordeaux.fr", role = c("aut")),
+    person("Hélène", "Jacqmin-Gadda", email = "helene.jacqmin-gadda@u-bordeaux.fr", role = c("aut"))
+    )
+Description: In a location-scale model framework, this package allows to estimate mixed models with a subject-specific variance, lsmm, lsjm, competing, frequentiste marquardt.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports:
-    parallel,
     dplyr,
-    lcmm,
-    randtoolbox,
-    mvtnorm,
-    marqLevAlg,
-    splines,
-    stats,
-    utils,
-    snow,
-    doParallel,
     ggplot2,
+    lcmm,
+    mvtnorm,
+    Rcpp,
     survminer,
-    Rcpp
+    utils
 Depends: 
     R (>= 3.5.0),
-    survival,
-    foreach,
-    splines
+    marqLevAlg,
+    randtoolbox (== 1.31.1),
+    splines,
+    survival
 URL: https://github.com/LeonieCourcoul/FlexVarJM
 BugReports: https://github.com/LeonieCourcoul/FlexVarJM/issues
 LazyData: true

@@ -58,14 +58,12 @@
 #' @param W_base matrix : fixed effects for variability
 #' @param Os.0 matrix : same for left truncation
 #' @param Ws.0 matrix : same for left truncation
-#' @param ne.e.a.sigma integer : number of RE for variability
-#' @param ne.omega integer : number of fixed effects for variability
+#' @param nb.e.a.sigma integer : number of RE for variability
+#' @param nb.omega integer : number of fixed effects for variability
 #' @param correlated_re boolean : indicator to allow all the random effects to be correlated
 #'
 #' @return The value of the log-likelihood
-#' @export
 #'
-#' @examples
 
 
 log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,

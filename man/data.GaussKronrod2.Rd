@@ -9,9 +9,11 @@ data.GaussKronrod2(data.id, a, b, k = 15)
 \arguments{
 \item{data.id}{A database with covariates of interest and 1 line per subject}
 
-\item{k}{The number of Gauss Kronrod points, by default k = 15}
+\item{a}{First born}
 
-\item{Time}{A vector of time event}
+\item{b}{Second born}
+
+\item{k}{The number of Gauss Kronrod points, by default k = 15}
 }
 \value{
 A list with the following components :

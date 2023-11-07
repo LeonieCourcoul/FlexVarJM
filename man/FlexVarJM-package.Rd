@@ -4,9 +4,9 @@
 \name{FlexVarJM-package}
 \alias{FlexVarJM}
 \alias{FlexVarJM-package}
-\title{FlexVarJM: Estimate Joint Models with subject-specific variance}
+\title{FlexVarJM: Estimate Joint Models with Subject-Specific Variance}
 \description{
-This package allows to estimate joint models with a subject-specific variance.
+In a location-scale model framework, this package allows to estimate mixed models with a subject-specific variance, lsmm, lsjm, competing, frequentiste marquardt.
 }
 \seealso{
 Useful links:
@@ -17,7 +17,13 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Léonie Courcoul \email{leonie.courcoul@u-bordeaux.fr} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+\strong{Maintainer}: Léonie Courcoul \email{leonie.courcoul@u-bordeaux.fr}
+
+Authors:
+\itemize{
+  \item Antoine Barbieri \email{antoine.barbieri@u-bordeaux.fr}
+  \item Hélène Jacqmin-Gadda \email{helene.jacqmin-gadda@u-bordeaux.fr}
+}
 
 }
 \keyword{internal}

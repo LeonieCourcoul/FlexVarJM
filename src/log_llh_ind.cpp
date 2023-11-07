@@ -107,7 +107,9 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
       slope_GK_0 = arma::repmat(beta_slope.t()*Xs_slope_0_i.t(),S,1) + b_al_slope*Us_slope_0_i.t();
     }
     if(dep_slope){
+      //Rcout << "The value of v : \n" << 21 << "\n";
       h = h%exp(alpha_slope*slope);
+     // Rcout << "The value of v : \n" << 21 << "\n";
       survLong = survLong + alpha_slope*slope_GK;
       if(left_trunc){
         survLong_0 = survLong_0 + alpha_slope*slope_GK_0;
@@ -121,6 +123,7 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
       }
     }
   }
+ // Rcout << "The value of v : \n" << 2 << "\n";
   //////h0
   double h_0;
   arma::vec h_0_GK;

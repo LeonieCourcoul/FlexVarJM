@@ -13,9 +13,7 @@
 #' \item{\code{data.id2}}{a database with K lines per subjects}
 #' \item{\code{id.GK}}{the vector of IDs}
 #' }
-#'
-#'
-#' @examples
+
 data.GaussKronrod <- function(data.id, Time, k = 15){
 
   wk <- gaussKronrod()$wk

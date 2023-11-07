@@ -13,11 +13,6 @@
 #' }
 #' @importFrom stats model.frame model.matrix
 #'
-#' @examples
-#'
-#'
-#'
-#'
 #'
 data.time <- function(data.id, Time, formFixed, formRandom, timeVar){
 
