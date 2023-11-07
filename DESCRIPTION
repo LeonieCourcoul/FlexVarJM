@@ -22,7 +22,7 @@ Imports:
 Depends: 
     R (>= 3.5.0),
     marqLevAlg,
-    randtoolbox (== 1.31.1),
+    randtoolbox,
     splines,
     survival
 URL: https://github.com/LeonieCourcoul/FlexVarJM
