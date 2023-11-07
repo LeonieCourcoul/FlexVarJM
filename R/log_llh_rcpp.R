@@ -62,6 +62,7 @@
 #' @param nb.omega integer : number of fixed effects for variability
 #' @param correlated_re boolean : indicator to allow all the random effects to be correlated
 #'
+#' @import Rcpp
 #' @return The value of the log-likelihood
 #'
 
