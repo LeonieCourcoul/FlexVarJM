@@ -20,6 +20,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/LeonieCourcoul/FlexVarJM/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/LeonieCourcoul/FlexVarJM/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of FlexVarJM is to estimate joint model with subject-specific
