@@ -52,7 +52,7 @@
 predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500, graph = F){
   if(!inherits(object, "lsjm")) stop("use only \"lsjm\" objects")
   if(IC<=0 || IC>=100) stop("IC must be between 0 and 100")
-  if(!is.null(IC) && (is.null(nb.draws) || draws <=0)) stop("draw must be higher 1")
+  if(!is.null(IC) && (is.null(nb.draws) || nb.draws <=0)) stop("draw must be higher 1")
   bootstrap <- c()
   pred.ponct <- c()
   id <- as.integer(newdata[all.vars(object$control$formGroup)][,1])

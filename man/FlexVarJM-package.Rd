@@ -6,7 +6,7 @@
 \alias{FlexVarJM-package}
 \title{FlexVarJM: Estimate Joint Models with Subject-Specific Variance}
 \description{
-In a location-scale model framework, this package allows to estimate mixed models with a subject-specific variance, lsmm, lsjm, competing, frequentiste marquardt.
+Estimation of mixed models including a subject-specific variance which can be time and covariate dependent. In the joint model framework, the package handles left truncation and allows a flexible dependence structure between the competing events and the longitudinal marker. The estimation is performed under the frequentist framework, using the Marquardt-Levenberg algorithm. (Courcoul, Tzourio, Woodward, Barbieri, Jacqmin-Gadda (2023) \href{https://arxiv.org/abs/2306.16785}{arXiv:2306.16785}).
 }
 \seealso{
 Useful links:
