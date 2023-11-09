@@ -1,3 +1,111 @@
+#' lsmm : Estimation of location scale mixed model
+#' 
+#' This function fits complex mixed effects model with a time and covariate dependent variance.
+#' We suppose that the variance of the residual error is time-dependent and subject-specific.
+#' Parameters are estimated simultaneously through a maximum likelihood method, using a Marquardt-Levenberg algorithm.
+#'
+#' @details
+#' 
+#' The model is defined by :
+#' #' \eqn{\quad\left\{\begin{array}{ll}
+#' Y_{ij} = Y_{i}(t_{ij}) = \widetilde{Y}_i(t_{ij}) + \epsilon_{ij} = X_{ij}^{\top} \beta+Z_{ij}^{\top} b_{i}+\epsilon_{ij}, \\
+#' \epsilon_{ij}(t_{ij}) \sim \mathcal{N}(0,\sigma_i^2(t_{ij})) \hspace{3mm} \text{with} \hspace{3mm} \log(\sigma_i(t_{ij}))  = O_{ij}^{\top} \mu+M_{ij}^{\top} \tau_{i}
+#' \end{array}
+#' \right.}
+#' 
+#' with \eqn{X_{ij}}, \eqn{O_{ij}}, \eqn{Z_{ij}} and \eqn{M_{ij}} four vectors of explanatory variables for subject \eqn{i} at visit \eqn{j}, 
+#' respectively associated with the fixed-effect vectors \eqn{\beta} and \eqn{\mu}, and the subject-specific random-effect vector \eqn{b_i} and \eqn{\tau_i}, such as 
+#' \eqn{\quad\left(\begin{array}{c}
+#'              b_{i} \\
+#'              \tau_i
+#'              \end{array}\right) \sim N\left(\left(\begin{array}{c}
+#'                                                   0 \\
+#'                                                   0
+#'                                                   \end{array}\right),\left(\begin{array}{cc}
+#'                                                                            \Sigma_{b} & \Sigma_{\tau b} \\
+#'                                                                            \Sigma_{\tau b}' & \Sigma_{\tau}
+#' \end{array}\right)\right)}
+#' -------------------------------------------------------------------------------------------------------------------------------------------------------------
+#' \eqn{Y_{i}(t_{ij}) = \tilde{Y}_i(t_{ij}) + \epsilon_{ij} = X_{ij}^{\top} \beta+Z_{ij}^{\top} b_{i}+\epsilon_{ij}}
+#'
+#' with \eqn{X_{ij}} and \eqn{Z_{ij}} two covariate vectors for subject i at visit j,
+#' respectively associated with the vector of fixed effects \eqn{\beta} and the vector of
+#' subject-specific individual random effects \eqn{b_i}.
+#' The vector \eqn{b_i} is assumed to be normally distributed and a specific-subject random effect on the
+#' variance of the measure error can be added: \eqn{\epsilon_{ij} \sim \mathcal{N}(0,\sigma_i^2)} and
+#'
+#' \eqn{\quad\left(\begin{array}{c}
+#' b_{i} \\
+#' \log \sigma_{i}
+#' \end{array}\right) \sim \mathcal{N}\left(\left(\begin{array}{c}
+#'                                                0 \\
+#'                                                \mu_{\sigma}
+#'                                                \end{array}\right),\left(\begin{array}{cc}
+#'                                                                         \Sigma_{b} & 0 \\
+#'                                                                         0 & \tau_{\sigma}^{2}
+#'                                                                         \end{array}\right)\right)}
+#'
+#'
+#'
+#'
+#' @param formFixed A formula for the fixed effects of the longitudinal submodel
+#' @param formRandom A formula for the random effects of the longitudinal submodel
+#' @param formGroup A formula which indicates the group variable
+#' @param timeVar The name of the column of time in data.long. This variable must appears in data.long
+#' @param data.long A dataframe with the longitudinal data
+#' @param variability_hetero A logical to indicate if we suppose a subject_specific variability
+#' @param formFixedVar A formula for the fixed effects of the variance predictor
+#' @param formRandomVar A formula for the random effects of the variance predictor
+#' @param correlated_re A logical to indicate if the random effects of the marker and the variance predictors are correlated (By default there are supposed to be independent) 
+#' @param S1 An integer : the number of QMC draws for the first step
+#' @param S2 An integer : the number of QMC draws for the second step
+#' @param nproc An integer : the number of processors for parallel computing
+#' @param clustertype ...
+#' @param maxiter optional maximum number of iterations for the marqLevAlg iterative algorithm.
+#' @param print.info logical indicating if the outputs of each iteration should be written
+#' @param file optional character giving the name of the file where the outputs of each iteration should be written (if print.info=TRUE)
+#' @param epsa optional threshold for the convergence criterion based on the parameter stability.
+#' @param epsb optional threshold for the convergence criterion based on the objective function stability.
+#' @param epsd optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whathever the problem.
+#' @param binit optional initials parameters.
+#'
+#' @return A FlexVarJoint object which contains the following elements :
+#' \describe{
+#' \item{\code{result}}{A marqLevAlg object with the results of the estimation.}
+#' \item{\code{table.res}}{The table of results : Estimation and SE}
+#' \item{\code{time.compute}}{Computation time}
+#' \item{\code{control}}{A list of control elements}
+#'
+#' }
+#' @import dplyr
+#' @import marqLevAlg
+#' @import splines
+#' @importFrom randtoolbox sobol
+#' @export
+#'
+#' @examples
+#'
+#' if(interactive()){
+#'
+#' #fit a joint model with competing risks and subject-specific variability
+#' example <- lsjm(formFixed = y~visit+binary,
+#' formRandom = ~ visit,
+#' formGroup = ~ID,
+#' timeVar = "visit",
+#' data.long = Data_toy,
+#' variability_hetero = TRUE,
+#' formFixedVar =~visit,
+#' formRandomVar =~visit,
+#' correlated_re = TRUE,
+#' S1 = 100,
+#' S2 = 1000,
+#' nproc = 5,
+#' maxiter = 100
+#' )
+#' 
+#' summary(example)
+#' }
+#'
 lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
                  variability_hetero = TRUE,  formFixedVar, formRandomVar, correlated_re = FALSE,S1 = 1000, S2= 5000, nproc = 1, clustertype = "SOCK", maxiter = 100,
                  print.info = FALSE, file = NULL, epsa = 1e-03, epsb = 1e-03, epsd = 1e-03, binit = NULL

@@ -122,7 +122,7 @@
 #'
 #' if(interactive()){
 #'
-#' #fit a joint model with competing risks and subaject-specific variability
+#' #fit a joint model with competing risks and subject-specific variability
 #' example <- lsjm(formFixed = y~visit+binary,
 #' formRandom = ~ visit,
 #' formGroup = ~ID,
