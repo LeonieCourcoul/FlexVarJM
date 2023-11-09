@@ -89,7 +89,7 @@
 #'
 #' 
 #' #fit a joint model with competing risks and subject-specific variability
-#' example <- lssm(formFixed = y~visit+binary,
+#' example <- lsmm(formFixed = y~visit+binary,
 #' formRandom = ~ visit,
 #' formGroup = ~ID,
 #' timeVar = "visit",
