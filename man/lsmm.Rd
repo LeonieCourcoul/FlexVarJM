@@ -52,7 +52,7 @@ lsmm(
 
 \item{nproc}{An integer : the number of processors for parallel computing}
 
-\item{clustertype}{...}
+\item{clustertype}{one of the supported types from \code{makeCluster} function}
 
 \item{maxiter}{optional maximum number of iterations for the marqLevAlg iterative algorithm.}
 
@@ -64,7 +64,7 @@ lsmm(
 
 \item{epsb}{optional threshold for the convergence criterion based on the objective function stability.}
 
-\item{epsd}{optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whathever the problem.}
+\item{epsd}{optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whatever the problem.}
 
 \item{binit}{optional initials parameters.}
 }
@@ -125,10 +125,11 @@ b_{i} \\
 }
 \examples{
 
-if(interactive()){
+\donttest{
+
 
 #fit a joint model with competing risks and subject-specific variability
-example <- lsjm(formFixed = y~visit+binary,
+example <- lssm(formFixed = y~visit+binary,
 formRandom = ~ visit,
 formGroup = ~ID,
 timeVar = "visit",
@@ -139,7 +140,7 @@ formRandomVar =~visit,
 correlated_re = TRUE,
 S1 = 100,
 S2 = 1000,
-nproc = 5,
+nproc = 1,
 maxiter = 100
 )
 

@@ -92,13 +92,13 @@
 #' @param S1 An integer : the number of QMC draws for the first step
 #' @param S2 An integer : the number of QMC draws for the second step
 #' @param nproc An integer : the number of processors for parallel computing
-#' @param clustertype ...
+#' @param clustertype one of the supported types from \code{makeCluster} function
 #' @param maxiter optional maximum number of iterations for the marqLevAlg iterative algorithm.
 #' @param print.info logical indicating if the outputs of each iteration should be written
 #' @param file optional character giving the name of the file where the outputs of each iteration should be written (if print.info=TRUE)
 #' @param epsa optional threshold for the convergence criterion based on the parameter stability.
 #' @param epsb optional threshold for the convergence criterion based on the objective function stability.
-#' @param epsd optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whathever the problem.
+#' @param epsd optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whatever the problem.
 #' @param binit optional initials parameters.
 #' @param Comp.Rcpp boolean to indicate if the computation is performed with RCPP program or R program. True by default.
 #'
@@ -120,13 +120,15 @@
 #'
 #' @examples
 #'
-#' if(interactive()){
+#' \donttest{
+#' 
+#' 
 #'
 #' #fit a joint model with competing risks and subject-specific variability
-#' example <- lsjm(formFixed = y~visit+binary,
+#' example <- lsjm(formFixed = y~visit,
 #' formRandom = ~ visit,
 #' formGroup = ~ID,
-#' formSurv = Surv(time, event ==1 ) ~ binary,
+#' formSurv = Surv(time, event ==1 ) ~ 1,
 #' timeVar = "visit",
 #' data.long = Data_toy,
 #' variability_hetero = TRUE,
@@ -134,21 +136,21 @@
 #' formRandomVar =~visit,
 #' correlated_re = TRUE,
 #' sharedtype = c("current value", "variability"),
-#' hazard_baseline = "Splines",
+#' hazard_baseline = "Weibull",
 #' formSlopeFixed =~1,
 #' formSlopeRandom = ~1,
 #' indices_beta_slope = c(2), 
 #' competing_risk = TRUE,
 #' formSurv_CR = Surv(time, event ==2 ) ~ 1,
 #' hazard_baseline_CR = "Weibull",
-#' sharedtype_CR = c("slope"),
+#' sharedtype_CR = c("current value", "variability"),
 #' S1 = 100,
 #' S2 = 1000,
-#' nproc = 5,
+#' nproc = 1,
 #' maxiter = 100,
 #' Comp.Rcpp = TRUE
 #' )
-#' 
+#'  
 #' summary(example)
 #' }
 #'
@@ -168,43 +170,44 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   #Check enter parameters
   if(missing(formFixed)) stop("The argument formFixed must be specified")
   if(missing(formRandom)) stop("The argument formRandom must be specified")
-  if(!inherits(class(formFixed),"formula")) stop("The argument formFixed must be a formula")
-  if(!inherits(class(formRandom),"formula")) stop("The argument formRandom must be a formula")
+  print( (formFixed))
+  if(!inherits(formFixed,"formula")) stop("The argument formFixed must be a formula")
+  if(!inherits(formRandom,"formula")) stop("The argument formRandom must be a formula")
   if(missing(formGroup)) stop("The argument formGroup must be specified")
-  if(!inherits(class(formGroup),"formula")) stop("The argument formGroup must be a formula")
+  if(!inherits( (formGroup),"formula")) stop("The argument formGroup must be a formula")
   if(missing(timeVar)) stop("The argument timeVar must be specified")
-  if(!inherits(class(timeVar),"character")) stop("The argument timeVar must be a character")
+  if(!inherits( (timeVar),"character")) stop("The argument timeVar must be a character")
   if(length(timeVar) != 1) stop("The argument timeVar must be of length 1")
   if(missing(data.long)) stop("The argument data.long must be specified")
-  if(!inherits(class(data.long),"data.frame")) stop("The argument data.long must be a data frame")
+  if(!inherits( (data.long),"data.frame")) stop("The argument data.long must be a data frame")
   if(nrow(data.long) == 0) stop("Data should not be empty")
   if(!(timeVar %in% colnames(data.long))) stop("Unable to find variable 'timeVar' in 'data.long'")
  # if(length(sharedtype) != 1 || !(sharedtype %in% c("RE", "CV", "CVS", "S"))) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
-  if(!inherits(class(variability_hetero),"logical")) stop("The argument 'varability_hetero' must be a logical")
+  if(!inherits( (variability_hetero),"logical")) stop("The argument 'varability_hetero' must be a logical")
   #if(sharedtype %in% c("CVS", "S") && missing(formSlopeFixed)) stop("The argument formSlopeFixed must be specified when the 'sharedtype' variable has the value CVS or S")
-  #if(sharedtype %in% c("CVS", "S") && class(formSlopeFixed) != "formula") stop("The argument formSlopeFixed must be a formula")
+  #if(sharedtype %in% c("CVS", "S") &&  (formSlopeFixed) != "formula") stop("The argument formSlopeFixed must be a formula")
   #if(sharedtype %in% c("CVS", "S") && missing(formSlopeRandom)) stop("The argument formSlopeRandom must be specified when the 'sharedtype' variable has the value CVS or S")
-  #if(sharedtype %in% c("CVS", "S") && class(formSlopeRandom) != "formula") stop("The argument formSlopeRandom must be a formula")
+  #if(sharedtype %in% c("CVS", "S") &&  (formSlopeRandom) != "formula") stop("The argument formSlopeRandom must be a formula")
   if(missing(formSurv)) stop("The argument formSurv must be specified")
-  if(!inherits(class(formSurv),"formula")) stop("The argument formSurv must be a formula")
-  if(!inherits(class(precision) , "numeric")) stop("The argument precision must be a numeric")
+  if(!inherits( (formSurv),"formula")) stop("The argument formSurv must be a formula")
+  if(!inherits( (precision) , "numeric")) stop("The argument precision must be a numeric")
   if(!(nb_pointsGK %in% c(7,15))) stop("The argument nb_pointsGK must be equal to 7 or 15.")
   if(length(hazard_baseline) != 1 || !(hazard_baseline %in% c("Weibull", "Splines","Exponential"))) stop("The value of argument 'hazard_baseline' must be of lenght 1 and must be 'Exponential' or 'Weibull' or 'Splines'")
-  if(!inherits(class(S1),"numeric")) stop("The argument S1 must be a numeric")
-  if(!inherits(class(S2),"numeric")) stop("The argument S2 must be a numeric")
+  if(!inherits( (S1),"numeric")) stop("The argument S1 must be a numeric")
+  if(!inherits( (S2),"numeric")) stop("The argument S2 must be a numeric")
   #if(missing(nb.e.a)) stop("The argument nb.e.a must be specified : it is the number of random effects + 1 when variability_hetero is TRUE")
-  #if(class(nb.e.a)!="numeric") stop("The argument nb.e.a must be a numeric : it is the number of random effects + 1 when variability_hetero is TRUE")
-  if(hazard_baseline == "Splines" && !inherits(class(ord.splines),"numeric")) stop("The argument ord.splines must be a numeric : the order of splines for the baseline hazard function")
-  if(!inherits(class(left_trunc) , "logical")) stop("The argument left_trunc (to take into account left truncation/delay entry) must be a logical")
-  if(!inherits(class(competing_risk) , "logical")) stop("The argument competing_risk (to take into account two competing events) must be a logical")
+  #if( (nb.e.a)!="numeric") stop("The argument nb.e.a must be a numeric : it is the number of random effects + 1 when variability_hetero is TRUE")
+  if(hazard_baseline == "Splines" && !inherits( (ord.splines),"numeric")) stop("The argument ord.splines must be a numeric : the order of splines for the baseline hazard function")
+  if(!inherits( (left_trunc) , "logical")) stop("The argument left_trunc (to take into account left truncation/delay entry) must be a logical")
+  if(!inherits( (competing_risk) , "logical")) stop("The argument competing_risk (to take into account two competing events) must be a logical")
   if(competing_risk && missing(formSurv_CR)) stop("The argument formSurv_CR must be specified when the argument competing_risk is TRUE")
-  if(competing_risk && !inherits(class(formSurv_CR),"formula")) stop("The argument formSurv_CR must be a formula when the argument competing_risk is TRUE")
+  if(competing_risk && !inherits( (formSurv_CR),"formula")) stop("The argument formSurv_CR must be a formula when the argument competing_risk is TRUE")
   #if(competing_risk && length(sharedtype_CR) != 1 ) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
   #if(competing_risk && !(sharedtype %in% c("RE", "CV", "CVS", "S"))) stop("The value of argument 'sharedtype' must be of lenght 1 and must be 'RE' or 'CV' or 'CVS' or 'S'")
   if(competing_risk && length(hazard_baseline_CR) != 1 ) stop("The value of argument 'hazard_baseline_CR' must be of lenght 1 and must be 'Exponential' or 'Weibull' or 'Splines'")
   if(competing_risk && !(hazard_baseline_CR %in% c("Weibull", "Splines","Exponential"))) stop("The value of argument 'hazard_baseline_CR' must be of lenght 1 and must be 'Exponential' or 'Weibull' or 'Splines'")
   if(left_trunc && missing(Time.0)) stop("The argument Time.0 (time of entry into the study) must be specified when left_trunc is TRUE")
-  if(left_trunc && !inherits(class(Time.0),"numeric")) stop("The argument Time.0 (time of entry into the study) must be a numeric when left_trunc is TRUE")
+  if(left_trunc && !inherits( (Time.0),"numeric")) stop("The argument Time.0 (time of entry into the study) must be a numeric when left_trunc is TRUE")
   #if(!(all.vars(formFixed) %in% colnames(data.long))) stop("All variables used in the argument formFixed must be in data.long")
   #if(!(all.vars(formRandom) %in% colnames(data.long))) stop("All variables used in the argument formRandom must be in data.long")
   #if(!(all.vars(formGroup) %in% colnames(data.long))) stop("All variables used in the argument formGroup must be in data.long")
@@ -291,7 +294,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   offset <- list.long$offset
   Ind <- list.long$I
   if(1==1){
-    cat("Longitudinal initialisation  \n")
+    message("Longitudinal initialisation")
     list.init.long <- initial.long(formFixed, formRandom, idVar, data.long,
                                    ncol(list.long$X), nproc = nproc)
     sigma_epsilon <- list.init.long$sigma
@@ -304,7 +307,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   
   
   ## survival part
-  cat("Survival initialisation  \n")
+  message("Survival initialisation")
   list.surv <- data.manag.surv(formGroup, formSurv, data.long, formSurv_CompRisk = formSurv_CR)
   event1 <- list.surv$event1
   event2 <- list.surv$event2
@@ -759,7 +762,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   if(is.null(hazard_baseline_CR)){
     hazard_baseline_CR <- "None"
   }
-  cat("First estimation  \n")
+  message("First estimation")
   
   #browser()
   if(Comp.Rcpp){
@@ -789,7 +792,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     else{
       Zq <- randtoolbox::sobol(S2, dim = nb.e.a, normal = TRUE,scrambling = 1)
     }
-    cat("Second estimation  \n")
+    message("Second estimation")
 
     estimation2 <- marqLevAlg(estimation$b, fn = log_llh_rcpp, minimize = FALSE,
                               nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
@@ -840,7 +843,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     else{
       Zq <- randtoolbox::sobol(S2, dim = nb.e.a,  normal = TRUE,scrambling = 1)
     }
-    cat("Second estimation  \n")
+    message("Second estimation")
     estimation2 <- marqLevAlg(estimation$b, fn = log_llh, minimize = FALSE,
                               nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
                               competing_risk = competing_risk,
@@ -921,7 +924,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                                         names_param = names_param)
                         
   )
-  class(final_object) <- c("lsjm")
+   class(final_object) <- c("lsjm")
   return(final_object)
   
 }

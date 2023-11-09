@@ -19,6 +19,7 @@ Imports:
     mvtnorm,
     randtoolbox,
     Rcpp,
+    stats,
     survminer,
     utils
 Depends: 

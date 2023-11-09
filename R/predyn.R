@@ -12,13 +12,14 @@
 #' @return A table of dynamic predictions
 #'
 #' @examples
-#' if(interactive()){
+#' \donttest{
+#' 
 #'
-#' #fit a joint model with competing risks and subaject-specific variability
-#' example <- lsjm(formFixed = y~visit+binary,
+#' #fit a joint model with competing risks and subject-specific variability
+#' example <- lsjm(formFixed = y~visit,
 #' formRandom = ~ visit,
 #' formGroup = ~ID,
-#' formSurv = Surv(time, event ==1 ) ~ binary,
+#' formSurv = Surv(time, event ==1 ) ~ 1,
 #' timeVar = "visit",
 #' data.long = Data_toy,
 #' variability_hetero = TRUE,
@@ -26,17 +27,17 @@
 #' formRandomVar =~visit,
 #' correlated_re = TRUE,
 #' sharedtype = c("current value", "variability"),
-#' hazard_baseline = "Splines",
+#' hazard_baseline = "Weibull",
 #' formSlopeFixed =~1,
 #' formSlopeRandom = ~1,
 #' indices_beta_slope = c(2), 
 #' competing_risk = TRUE,
 #' formSurv_CR = Surv(time, event ==2 ) ~ 1,
 #' hazard_baseline_CR = "Weibull",
-#' sharedtype_CR = c("slope"),
+#' sharedtype_CR = c("current value", "variability"),
 #' S1 = 100,
 #' S2 = 1000,
-#' nproc = 5,
+#' nproc = 1,
 #' maxiter = 100,
 #' Comp.Rcpp = TRUE
 #' )
@@ -49,8 +50,9 @@
 #' }
 #' @export
 
-predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500, graph = F){
+predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500, graph = FALSE){
   if(!inherits(object, "lsjm")) stop("use only \"lsjm\" objects")
+  if(object$result$istop != 1) stop("The estimation didn't reach convergence \n")
   if(IC<=0 || IC>=100) stop("IC must be between 0 and 100")
   if(!is.null(IC) && (is.null(nb.draws) || nb.draws <=0)) stop("draw must be higher 1")
   bootstrap <- c()

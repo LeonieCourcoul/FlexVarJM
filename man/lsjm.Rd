@@ -95,7 +95,7 @@ lsjm(
 
 \item{nproc}{An integer : the number of processors for parallel computing}
 
-\item{clustertype}{...}
+\item{clustertype}{one of the supported types from \code{makeCluster} function}
 
 \item{maxiter}{optional maximum number of iterations for the marqLevAlg iterative algorithm.}
 
@@ -107,7 +107,7 @@ lsjm(
 
 \item{epsb}{optional threshold for the convergence criterion based on the objective function stability.}
 
-\item{epsd}{optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whathever the problem.}
+\item{epsd}{optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whatever the problem.}
 
 \item{binit}{optional initials parameters.}
 
@@ -188,13 +188,15 @@ Different parametric forms for the baseline risk function can be considered, suc
 }
 \examples{
 
-if(interactive()){
+\donttest{
+
+
 
 #fit a joint model with competing risks and subject-specific variability
-example <- lsjm(formFixed = y~visit+binary,
+example <- lsjm(formFixed = y~visit,
 formRandom = ~ visit,
 formGroup = ~ID,
-formSurv = Surv(time, event ==1 ) ~ binary,
+formSurv = Surv(time, event ==1 ) ~ 1,
 timeVar = "visit",
 data.long = Data_toy,
 variability_hetero = TRUE,
@@ -202,21 +204,21 @@ formFixedVar =~visit,
 formRandomVar =~visit,
 correlated_re = TRUE,
 sharedtype = c("current value", "variability"),
-hazard_baseline = "Splines",
+hazard_baseline = "Weibull",
 formSlopeFixed =~1,
 formSlopeRandom = ~1,
 indices_beta_slope = c(2), 
 competing_risk = TRUE,
 formSurv_CR = Surv(time, event ==2 ) ~ 1,
 hazard_baseline_CR = "Weibull",
-sharedtype_CR = c("slope"),
+sharedtype_CR = c("current value", "variability"),
 S1 = 100,
 S2 = 1000,
-nproc = 5,
+nproc = 1,
 maxiter = 100,
 Comp.Rcpp = TRUE
 )
-
+ 
 summary(example)
 }
 

@@ -60,13 +60,13 @@
 #' @param S1 An integer : the number of QMC draws for the first step
 #' @param S2 An integer : the number of QMC draws for the second step
 #' @param nproc An integer : the number of processors for parallel computing
-#' @param clustertype ...
+#' @param clustertype one of the supported types from \code{makeCluster} function
 #' @param maxiter optional maximum number of iterations for the marqLevAlg iterative algorithm.
 #' @param print.info logical indicating if the outputs of each iteration should be written
 #' @param file optional character giving the name of the file where the outputs of each iteration should be written (if print.info=TRUE)
 #' @param epsa optional threshold for the convergence criterion based on the parameter stability.
 #' @param epsb optional threshold for the convergence criterion based on the objective function stability.
-#' @param epsd optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whathever the problem.
+#' @param epsd optional threshold for the relative distance to maximum. This criterion has the nice interpretation of estimating the ratio of the approximation error over the statistical error, thus it can be used for stopping the iterative process whatever the problem.
 #' @param binit optional initials parameters.
 #'
 #' @return A FlexVarJoint object which contains the following elements :
@@ -85,10 +85,11 @@
 #'
 #' @examples
 #'
-#' if(interactive()){
+#' \donttest{
 #'
+#' 
 #' #fit a joint model with competing risks and subject-specific variability
-#' example <- lsjm(formFixed = y~visit+binary,
+#' example <- lssm(formFixed = y~visit+binary,
 #' formRandom = ~ visit,
 #' formGroup = ~ID,
 #' timeVar = "visit",
@@ -99,7 +100,7 @@
 #' correlated_re = TRUE,
 #' S1 = 100,
 #' S2 = 1000,
-#' nproc = 5,
+#' nproc = 1,
 #' maxiter = 100
 #' )
 #' 
@@ -116,21 +117,21 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   #Check enter parameters
   if(missing(formFixed)) stop("The argument formFixed must be specified")
   if(missing(formRandom)) stop("The argument formRandom must be specified")
-  if(!inherits(class(formFixed),"formula")) stop("The argument formFixed must be a formula")
-  if(!inherits(class(formRandom),"formula")) stop("The argument formRandom must be a formula")
+  if(!inherits((formFixed),"formula")) stop("The argument formFixed must be a formula")
+  if(!inherits((formRandom),"formula")) stop("The argument formRandom must be a formula")
   if(missing(formGroup)) stop("The argument formGroup must be specified")
-  if(!inherits(class(formGroup),"formula")) stop("The argument formGroup must be a formula")
+  if(!inherits((formGroup),"formula")) stop("The argument formGroup must be a formula")
   if(missing(timeVar)) stop("The argument timeVar must be specified")
-  if(!inherits(class(timeVar),"character")) stop("The argument timeVar must be a character")
+  if(!inherits((timeVar),"character")) stop("The argument timeVar must be a character")
   if(length(timeVar) != 1) stop("The argument timeVar must be of length 1")
   if(missing(data.long)) stop("The argument data.long must be specified")
-  if(!inherits(class(data.long) ,"data.frame") )stop("The argument data.long must be a data frame")
+  if(!inherits((data.long) ,"data.frame") )stop("The argument data.long must be a data frame")
   if(nrow(data.long) == 0) stop("Data should not be empty")
   if(!(timeVar %in% colnames(data.long))) stop("Unable to find variable 'timeVar' in 'data.long'")
-  if(!inherits(class(variability_hetero) ,"logical") )stop("The argument 'varability_hetero' must be a logical")
-  if(!inherits(class(precision) , "numeric") )stop("The argument precision must be a numeric")
-  if(!inherits(class(S1),"numeric")) stop("The argument S1 must be a numeric")
-  if(!inherits(class(S2),"numeric")) stop("The argument S2 must be a numeric")
+  if(!inherits((variability_hetero) ,"logical") )stop("The argument 'varability_hetero' must be a logical")
+  if(!inherits((precision) , "numeric") )stop("The argument precision must be a numeric")
+  if(!inherits((S1),"numeric")) stop("The argument S1 must be a numeric")
+  if(!inherits((S2),"numeric")) stop("The argument S2 must be a numeric")
   #if(!(all.vars(formFixed) %in% colnames(data.long))) stop("All variables used in the argument formFixed must be in data.long")
   #if(!(all.vars(formRandom) %in% colnames(data.long))) stop("All variables used in the argument formRandom must be in data.long")
   #if(!(all.vars(formGroup) %in% colnames(data.long))) stop("All variables used in the argument formGroup must be in data.long")
@@ -183,7 +184,7 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   idVar = "id"
   
   ##longitudinal part
-  cat("Longitudinal initialisation \n")
+  message("Longitudinal initialisation")
   list.long <- data.manag.long(formGroup,formFixed, formRandom,data.long)
   X_base <- list.long$X
   U <- list.long$U
@@ -264,7 +265,7 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   else{
     Zq <- sobol(S1, nb.e.a, normal = TRUE, scrambling = 1)
   }
-  cat("First estimation  \n")
+  message("First estimation")
   estimation <- marqLevAlg(binit, fn = log_llh_lsmm, minimize = FALSE,
                            nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,variability_hetero = variability_hetero, S = S1,Zq = Zq, X_base = X_base, offset = offset, 
                            U = U, y.new.prog = y.new.prog, Ind = Ind,
@@ -279,7 +280,7 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   else{
     Zq <- sobol(S2, nb.e.a, normal = TRUE, scrambling = 1)
   }
-  cat("Second estimation  \n")
+  message("Second estimation")
   estimation2 <- marqLevAlg(estimation$b, fn = log_llh_lsmm, minimize = FALSE,
                             nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,variability_hetero = variability_hetero, S = S1,Zq = Zq, X_base = X_base, offset = offset, 
                             U = U, y.new.prog = y.new.prog, Ind = Ind,

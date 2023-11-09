@@ -14,13 +14,14 @@
 #'
 #' @examples
 #' 
-#' if(interactive()){
+#' \donttest{
+#' 
 #'
-#' #Fit a joint model with competing risks and subaject-specific variability
-#' example <- lsjm(formFixed = y~visit+binary,
+#' #Fit a joint model with competing risks and subject-specific variability
+#' example <- lsjm(formFixed = y~visit,
 #' formRandom = ~ visit,
 #' formGroup = ~ID,
-#' formSurv = Surv(time, event ==1 ) ~ binary,
+#' formSurv = Surv(time, event ==1 ) ~ 1,
 #' timeVar = "visit",
 #' data.long = Data_toy,
 #' variability_hetero = TRUE,
@@ -28,31 +29,32 @@
 #' formRandomVar =~visit,
 #' correlated_re = TRUE,
 #' sharedtype = c("current value", "variability"),
-#' hazard_baseline = "Splines",
+#' hazard_baseline = "Weibull",
 #' formSlopeFixed =~1,
 #' formSlopeRandom = ~1,
 #' indices_beta_slope = c(2), 
 #' competing_risk = TRUE,
 #' formSurv_CR = Surv(time, event ==2 ) ~ 1,
 #' hazard_baseline_CR = "Weibull",
-#' sharedtype_CR = c("slope"),
+#' sharedtype_CR = c("current value", "variability"),
 #' S1 = 100,
 #' S2 = 1000,
-#' nproc = 5,
+#' nproc = 1,
 #' maxiter = 100,
 #' Comp.Rcpp = TRUE
 #' )
 #' 
 #' #Assesment of the goodness of fit:
-#' gof <- goodness_of_fit(example, graph = T)
+#' gof <- goodness_of_fit(example, graph = TRUE)
 #' gof$tables
 #' gof$graphs
 #' }
 #'
-goodness_of_fit <- function(object, graph = F, break.times = NULL){
+goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
   x <- object
   if(!inherits(x, "lsjm")) stop("use only \"lsjm\" objects")
-  cat("Computation of predictions \n")
+  if(x$result$istop != 1) stop("The estimation didn't reach convergence \n")
+  message("Computation of predictions")
   Xtime <- NULL
   Utime <- NULL
   Xs <- NULL
@@ -450,8 +452,12 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
   P.sort.unique <- data.GaussKronrod.sort.unique$P
   pred.r.e.table <- c()
   pred.CV <- c()
+  pb <- utils::txtProgressBar(min = 0,
+                              max = Ind,
+                              initial = 0,
+                              char = "*",
+                              style = 3)
   for(i in 1:Ind){
-    print(i)
     Cum_risk_2i <- c()
     Cum_risk_1i <- c()
     X_base_i <- X_base[offset[i]:(offset[i+1]-1),]
@@ -653,6 +659,8 @@ goodness_of_fit <- function(object, graph = F, break.times = NULL){
     
     Cum_risk1 <- rbind(Cum_risk1,Cum_risk_1i)
     Cum_risk2 <- rbind(Cum_risk2,Cum_risk_2i)
+    
+    utils::setTxtProgressBar(pb,i)
   }
   result <- list(pred.r.e.table = pred.r.e.table,
                  pred.CV = pred.CV, Cum_risk1 = Cum_risk1, Cum_risk2 = Cum_risk2)

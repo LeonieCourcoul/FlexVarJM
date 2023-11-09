@@ -286,6 +286,7 @@ summary.lsjm <- function(object,...)
   cat("Survival model(s):")
   cat("\n")
   cat("    First event:")
+  #browser()
   e1_var_tab <- NULL
   e1_share_current_tab <- NULL
   e1_share_slope_tab <- NULL
@@ -320,35 +321,53 @@ summary.lsjm <- function(object,...)
     e1_share_slope_tab[,4] <- 1 - pchisq(e1_share_slope_tab[,3]**2,1)
     e1_names_tab <- c(e1_names_tab, alpha.slope.name)
   }
-  if(x$control$nb.alpha >=1){
-    e1_alpha_tab <- matrix(nrow = length(alpha), ncol = 4)
-    e1_alpha_tab[,1] <- alpha
-    e1_alpha_tab[,2] <- alpha.se
-    e1_alpha_tab[,3] <- e1_alpha_tab[,1]/e1_alpha_tab[,2]
-    e1_alpha_tab[,4] <- 1 - pchisq(e1_alpha_tab[,3]**2,1)
-    e1_names_tab <- c(e1_names_tab, alpha.name)
+  if(x$control$hazard_baseline == "Splines"){
+    if(x$control$nb.alpha >=1){
+      e1_alpha_tab <- matrix(nrow = length(alpha), ncol = 4)
+      e1_alpha_tab[,1] <- alpha
+      e1_alpha_tab[,2] <- alpha.se
+      e1_alpha_tab[,3] <- e1_alpha_tab[,1]/e1_alpha_tab[,2]
+      e1_alpha_tab[,4] <- 1 - pchisq(e1_alpha_tab[,3]**2,1)
+      e1_names_tab <- c(e1_names_tab, alpha.name)
+    }
   }
+  else{
+    if(x$control$nb.alpha >=2){
+      e1_alpha_tab <- matrix(nrow = length(alpha)-1, ncol = 4)
+      e1_alpha_tab[,1] <- alpha[-1]
+      e1_alpha_tab[,2] <- alpha.se[-1]
+      e1_alpha_tab[,3] <- e1_alpha_tab[,1]/e1_alpha_tab[,2]
+      e1_alpha_tab[,4] <- 1 - pchisq(e1_alpha_tab[,3]**2,1)
+      e1_names_tab <- c(e1_names_tab, alpha.name[-1])
+    }
+  }
+  
   
   
   
   e1_bas_tab <- NULL
   if(x$control$hazard_baseline == "Exponential"){
     e1_bas_tab <- matrix(nrow = 1, ncol = 4)
-    e1_bas_tab[1,] <- e1_alpha_tab[1,]
-    e1_alpha_tab <- e1_alpha_tab[-1,]
+    e1_bas_tab[1,1] <- alpha[1]
+    e1_bas_tab[1,2] <- alpha.se[1]
+    e1_bas_tab[1,3] <- e1_bas_tab[,1]/e1_bas_tab[,2]
+    e1_bas_tab[1,4] <- 1 - pchisq(e1_bas_tab[,3]**2,1)
+    #e1_alpha_tab <- e1_alpha_tab[-1,]
     e1_names_tab <- c(e1_names_tab, alpha.name[-1])
     rownames(e1_bas_tab) <- c("intercept")
     colnames(e1_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
   }
   if(x$control$hazard_baseline == "Weibull"){
     e1_bas_tab <- matrix(nrow = 2, ncol = 4)
-    e1_bas_tab[1,] <- e1_alpha_tab[1,]
-    e1_alpha_tab <- e1_alpha_tab[-1,]
-    e1_names_tab <- c(e1_names_tab, alpha.name[-1])
+    e1_bas_tab[1,1] <- alpha[1]
+    e1_bas_tab[1,2] <- alpha.se[1]
+    #e1_bas_tab[1,] <- e1_alpha_tab[1,]
+    #e1_alpha_tab <- e1_alpha_tab[-1,]
+    #e1_names_tab <- c(e1_names_tab, alpha.name[-1])
     e1_bas_tab[2,1] <- shape
     e1_bas_tab[2,2] <- shape.se
-    e1_bas_tab[2,3] <- e1_bas_tab[2,1]/e1_bas_tab[2,2]
-    e1_bas_tab[2,4] <- 1 - pchisq(e1_bas_tab[2,3]**2,1)
+    e1_bas_tab[,3] <- e1_bas_tab[,1]/e1_bas_tab[,2]
+    e1_bas_tab[,4] <- 1 - pchisq(e1_bas_tab[,3]**2,1)
     rownames(e1_bas_tab) <- c("intercept",shape.name)
     colnames(e1_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
   }
@@ -412,34 +431,52 @@ summary.lsjm <- function(object,...)
       e2_share_slope_tab[,4] <- 1 - pchisq(e2_share_slope_tab[,3]**2,1)
       e2_names_tab <- c(e2_names_tab, alpha.slope.CR.name)
     }
-    if(x$control$nb.alpha.CR >=1){
-      e2_alpha_tab <- matrix(nrow = length(alpha.CR), ncol = 4)
-      e2_alpha_tab[,1] <- alpha.CR
-      e2_alpha_tab[,2] <- alpha.CR.se
-      e2_alpha_tab[,3] <- e2_alpha_tab[,1]/e2_alpha_tab[,2]
-      e2_alpha_tab[,4] <- 1 - pchisq(e2_alpha_tab[,3]**2,1)
+    if(x$control$hazard_baseline_CR == "Splines"){
+      if(x$control$nb.alpha.CR >=1){
+        e2_alpha_tab <- matrix(nrow = length(alpha.CR), ncol = 4)
+        e2_alpha_tab[,1] <- alpha.CR
+        e2_alpha_tab[,2] <- alpha.CR.se
+        e2_alpha_tab[,3] <- e2_alpha_tab[,1]/e2_alpha_tab[,2]
+        e2_alpha_tab[,4] <- 1 - pchisq(e2_alpha_tab[,3]**2,1)
+      }
     }
+    else{
+      if(x$control$nb.alpha.CR >=2){
+        e2_alpha_tab <- matrix(nrow = length(alpha.CR)-1, ncol = 4)
+        e2_alpha_tab[,1] <- alpha.CR[-1]
+        e2_alpha_tab[,2] <- alpha.CR.se[-1]
+        e2_alpha_tab[,3] <- e2_alpha_tab[,1]/e2_alpha_tab[,2]
+        e2_alpha_tab[,4] <- 1 - pchisq(e2_alpha_tab[,3]**2,1)
+      }
+    }
+    
     
     
     
     e2_bas_tab <- NULL
     if(x$control$hazard_baseline_CR == "Exponential"){
       e2_bas_tab <- matrix(nrow = 1, ncol = 4)
-      e2_bas_tab[1,] <- e2_alpha_tab[1,]
-      e2_alpha_tab <- e2_alpha_tab[-1,]
+      e2_bas_tab[,1] <- alpha.CR[1]
+      e2_bas_tab[,2] <- alpha.CR.se[1]
+      e2_bas_tab[,3] <- e2_bas_tab[,1]/e2_bas_tab[,2]
+      e2_bas_tab[,4] <- 1 - pchisq(e2_bas_tab[,3]**2,1)
+     # e2_bas_tab[1,] <- e2_alpha_tab[1,]
+     # e2_alpha_tab <- e2_alpha_tab[-1,]
       e2_names_tab <- c(e2_names_tab, alpha.CR.name[-1])
       rownames(e2_bas_tab) <- c("intercept")
       colnames(e2_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
     }
     if(x$control$hazard_baseline_CR == "Weibull"){
       e2_bas_tab <- matrix(nrow = 2, ncol = 4)
-      e2_bas_tab[1,] <- e2_alpha_tab[1,]
-      e2_alpha_tab <- e2_alpha_tab[-1,]
+      #e2_bas_tab[1,] <- e2_alpha_tab[1,]
+      #e2_alpha_tab <- e2_alpha_tab[-1,]
       e2_names_tab <- c(e2_names_tab, alpha.CR.name[-1])
+      e2_bas_tab[,1] <- alpha.CR[1]
+      e2_bas_tab[,2] <- alpha.CR.se[1]
       e2_bas_tab[2,1] <- shape.CR
       e2_bas_tab[2,2] <- shape.CR.se
-      e2_bas_tab[2,3] <- e2_bas_tab[2,1]/e2_bas_tab[2,2]
-      e2_bas_tab[2,4] <- 1 - pchisq(e2_bas_tab[2,3]**2,1)
+      e2_bas_tab[,3] <- e2_bas_tab[,1]/e2_bas_tab[,2]
+      e2_bas_tab[,4] <- 1 - pchisq(e2_bas_tab[,3]**2,1)
       rownames(e2_bas_tab) <- c("intercept",shape.CR.name)
       colnames(e2_bas_tab) <- c("Coeff", "SE", "Wald", "P-value")
     }

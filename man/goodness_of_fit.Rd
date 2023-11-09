@@ -4,7 +4,7 @@
 \alias{goodness_of_fit}
 \title{Predictions for the goodness of fit, of the random effects, the current value for each individuals and the cumulative hazard function for both events}
 \usage{
-goodness_of_fit(object, graph = F, break.times = NULL)
+goodness_of_fit(object, graph = FALSE, break.times = NULL)
 }
 \arguments{
 \item{object}{an object of class lsjm}
@@ -26,13 +26,14 @@ Predictions for the goodness of fit, of the random effects, the current value fo
 }
 \examples{
 
-if(interactive()){
+\donttest{
 
-#Fit a joint model with competing risks and subaject-specific variability
-example <- lsjm(formFixed = y~visit+binary,
+
+#Fit a joint model with competing risks and subject-specific variability
+example <- lsjm(formFixed = y~visit,
 formRandom = ~ visit,
 formGroup = ~ID,
-formSurv = Surv(time, event ==1 ) ~ binary,
+formSurv = Surv(time, event ==1 ) ~ 1,
 timeVar = "visit",
 data.long = Data_toy,
 variability_hetero = TRUE,
@@ -40,23 +41,23 @@ formFixedVar =~visit,
 formRandomVar =~visit,
 correlated_re = TRUE,
 sharedtype = c("current value", "variability"),
-hazard_baseline = "Splines",
+hazard_baseline = "Weibull",
 formSlopeFixed =~1,
 formSlopeRandom = ~1,
 indices_beta_slope = c(2), 
 competing_risk = TRUE,
 formSurv_CR = Surv(time, event ==2 ) ~ 1,
 hazard_baseline_CR = "Weibull",
-sharedtype_CR = c("slope"),
+sharedtype_CR = c("current value", "variability"),
 S1 = 100,
 S2 = 1000,
-nproc = 5,
+nproc = 1,
 maxiter = 100,
 Comp.Rcpp = TRUE
 )
 
 #Assesment of the goodness of fit:
-gof <- goodness_of_fit(example, graph = T)
+gof <- goodness_of_fit(example, graph = TRUE)
 gof$tables
 gof$graphs
 }
