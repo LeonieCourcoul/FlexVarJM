@@ -16,7 +16,7 @@ Imports:
     lcmm,
     marqLevAlg,
     mvtnorm,
-    randtoolbox (== 1.31.1),
+    randtoolbox,
     Rcpp,
     stats,
     survminer,
