@@ -41,13 +41,11 @@ summary.lsmm <- function(object,...)
   
   cat("\n")
   cat("Maximum Likelihood Estimates:")
-  
   #Manage parameters
   curseur <- 1
   param <- x$table.res$Estimation
   param.se <- x$table.res$SE
   param.names <- rownames(x$table.res)
-  #browser()
   #Evenement 1 :
   ## Risque de base :
   # Marqueur :

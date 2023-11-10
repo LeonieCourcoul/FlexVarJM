@@ -188,11 +188,14 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   list.long <- data.manag.long(formGroup,formFixed, formRandom,data.long)
   X_base <- list.long$X
   U <- list.long$U
+  U <- as.matrix(U)
   nb.e.a <- ncol(U)
   y.new.prog <- list.long$y.new.prog
   list.var <- data.manag.sigma(formGroup,formFixedVar, formRandomVar,data.long)
   O_base <- list.var$X
+  O_base <- as.matrix(O_base)
   W_base <- list.var$U
+  W_base <- as.matrix(W_base)
   nb.omega <- ncol(O_base)
   nb.e.a.sigma <- ncol(W_base)
   data.long <- cbind(data.long,y.new.prog)
@@ -311,6 +314,9 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
                                         variability_hetero = variability_hetero,
                                         data.long = data.long,
                                         S1 = S1, S2 = S2, nb.e.a = nb.e.a,
+                                        nb.omega = nb.omega,
+                                        nb.e.a.sigma = nb.e.a.sigma,
+                                        correlated_re = correlated_re,
                                           nproc = nproc, clustertype = clustertype,
                                         maxiter = maxiter, print.info = print.info,
                                         file = file, epsa = epsa, epsb = epsb, epsd = epsd,
