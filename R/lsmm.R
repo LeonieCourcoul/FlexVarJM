@@ -211,6 +211,7 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
     priorMean.beta <- list.init.long$priorMean.beta
   }
   if(is.null(binit)){
+    names_param <- c()
     # Marqueur :
     ## Effets fixes trend :
     binit <- c(binit, priorMean.beta)
