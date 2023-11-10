@@ -110,7 +110,6 @@
 #' \item{\code{control}}{A list of control elements}
 #'
 #' }
-#' @import dplyr
 #' @import survival
 #' @import marqLevAlg
 #' @import splines
@@ -288,8 +287,14 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   nb.omega <- ncol(O_base)
   nb.e.a.sigma <- ncol(W_base)
   data.long <- cbind(data.long,y.new.prog)
-  data.long <- data.long %>% group_by(id) %>% dplyr::mutate(sd.emp = sd(y.new.prog),
-                                                            VC.emp = mean(y.new.prog))%>% ungroup()
+  grouped_data <- split(data.long, data.long$id)
+  calculate_sd_vc <- function(group) {
+    group$sd.emp <- sd(group$y.new.prog)
+    group$VC.emp <- mean(group$y.new.prog)
+    return(group)
+  }
+  grouped_data <- lapply(grouped_data, calculate_sd_vc)
+  data.long <- do.call(rbind, grouped_data)
   data.long <- as.data.frame(data.long)
   offset <- list.long$offset
   Ind <- list.long$I

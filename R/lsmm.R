@@ -77,7 +77,6 @@
 #' \item{\code{control}}{A list of control elements}
 #'
 #' }
-#' @import dplyr
 #' @import marqLevAlg
 #' @import splines
 #' @importFrom randtoolbox sobol
@@ -199,8 +198,6 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   nb.omega <- ncol(O_base)
   nb.e.a.sigma <- ncol(W_base)
   data.long <- cbind(data.long,y.new.prog)
-  data.long <- data.long %>% group_by(id) %>% dplyr::mutate(sd.emp = sd(y.new.prog),
-                                                            VC.emp = mean(y.new.prog) )%>% ungroup()
   data.long <- as.data.frame(data.long)
   offset <- list.long$offset
   Ind <- list.long$I
