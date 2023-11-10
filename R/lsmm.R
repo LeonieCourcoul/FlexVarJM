@@ -276,7 +276,7 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
                            file = file, blinding = TRUE, epsa = epsa, epsb = epsb, epsd = epsd)
   #S2 <- 10000
   if(variability_hetero){
-    Zq <- sobol(S2, nb.e.a+1, normal = TRUE, scrambling = 1)
+    Zq <- sobol(S2, nb.e.a+nb.e.a.sigma, normal = TRUE, scrambling = 1)
   }
   else{
     Zq <- sobol(S2, nb.e.a, normal = TRUE, scrambling = 1)
@@ -296,7 +296,7 @@ lsmm <- function(formFixed, formRandom, formGroup, timeVar, data.long,
   table.res <- cbind(param_est, sd.param)
   table.res <- as.data.frame(table.res)
   colnames(table.res) <- c("Estimation", "SE")
-  #rownames(table.res) <- names_param
+  rownames(table.res) <- names_param
   
   time.prog2 <- Sys.time()
   time.prog.fin <- difftime(time.prog2, time.prog1)
