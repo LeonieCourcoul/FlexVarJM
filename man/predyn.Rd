@@ -75,4 +75,5 @@ newdata <- Data_toy[which(Data_toy$ID \%in\% c(1,3)),]
 pred.new <- predyn(newdata,example,1, c(1.5,2,2.8,3), event = 1, IC = 95, 
 nb.draws = 100, graph = TRUE)
 }
+
 }
