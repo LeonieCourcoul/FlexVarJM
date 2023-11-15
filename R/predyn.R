@@ -48,6 +48,8 @@
 #' pred.new <- predyn(newdata,example,1, c(1.5,2,2.8,3), event = 1, IC = 95, 
 #' nb.draws = 100, graph = TRUE)
 #' }
+#' 
+#' @importFrom graphics par
 #' @export
 
 predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500, graph = FALSE){
@@ -80,8 +82,8 @@ predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500
       table.pred.id <- as.data.frame(table.pred.id)
       colnames(table.pred.id) <- c("ID","Time","Prediction","Median","ICinf","ICsup", "Empirical SD")
       if(graph){
-        oldpar <- par(no.readonly = TRUE) # code line i
-        on.exit(par(oldpar)) # code line i + 1
+        oldpar <- graphics::par(no.readonly = TRUE) # code line i
+        on.exit(graphics::par(oldpar)) # code line i + 1
         #browser()
         data.long.until.time.s <-subset(newdata.id, get(object$control$timeVar)<=s)
         x.axe <- c(data.long.until.time.s[,all.vars(object$control$formFixed)[2]],times)
@@ -130,8 +132,8 @@ predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500
     colnames(table.pred) <- c("ID","Time","Prediction")
     graph.predyn <- NULL
     if(graph){
-      oldpar <- par(no.readonly = TRUE) # code line i
-      on.exit(par(oldpar)) # code line i + 1
+      oldpar <- graphics::par(no.readonly = TRUE) # code line i
+      on.exit(graphics::par(oldpar)) # code line i + 1
       data.long.until.time.s <-subset(newdata.id, get(object$control$timeVar)<=s)
       x.axe <- c(data.long.until.time.s[,all.vars(object$control$formFixed)[2]],times)
       #print(x.axe)
