@@ -14,6 +14,8 @@ plot_goodnessoffit<-function(data.long,data.id,pred.CV,break.times, formFixed, f
   obstime.mean <- by(data.long[,timeVar], data.long$window, mean)
   df <- cbind(obstime.mean, mean.obs, IC.sup, IC.inf, mean.pred)
   df <- as.data.frame(df)
+  oldpar <- par(no.readonly = TRUE) # code line i
+  on.exit(par(oldpar)) # code line i + 1
   k <- ggplot2::ggplot(df,  ggplot2::aes(obstime.mean, mean.obs, ymin = IC.sup, ymax = IC.inf))
   graph.long <- k +  ggplot2::geom_pointrange( ggplot2::aes(ymin = IC.sup, ymax = IC.inf), shape =1) +
      ggplot2::geom_point(ggplot2::aes(obstime.mean, mean.pred), size = 3, shape = 17) +
@@ -54,7 +56,8 @@ plot_goodnessoffit<-function(data.long,data.id,pred.CV,break.times, formFixed, f
     colnames(Cum.pred2.sort) <- c("pred","timeFormSurv")
     timeFormSurv <- Cum.pred2.sort$timeFormSurv
     pred <- Cum.pred2.sort$pred
-    
+    oldpar <- par(no.readonly = TRUE) # code line i
+    on.exit(par(oldpar)) # code line i + 1
     Surv.fit2 <- survminer::surv_fit(formSurv_CR, data = C2.sort)
     graph.surv.2 <- survminer::ggsurvplot(Surv.fit2, data = C2.sort, fun = "cumhaz",
                                conf.int.style = "step", legend = "none", xlab = "Time")$plot +

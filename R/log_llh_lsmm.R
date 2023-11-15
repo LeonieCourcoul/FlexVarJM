@@ -29,9 +29,13 @@ log_llh_lsmm <- function(param, nb.e.a, nb.priorMean.beta, variability_hetero, S
   
   for(i in 1:Ind){#Computation of contribution to the log_lokelihood
     X_base_i <- X_base[offset[i]:(offset[i+1]-1),]
+    X_base_i <- matrix(X_base_i, nrow = offset[i+1]-offset[i])
     O_base_i <- O_base[offset[i]:(offset[i+1]-1),]
+    O_base_i <- matrix(O_base_i, nrow = offset[i+1]-offset[i])
     W_base_i <- W_base[offset[i]:(offset[i+1]-1),]
+    W_base_i <- matrix(W_base_i, nrow = offset[i+1]-offset[i])
     U_i <- U[offset[i]:(offset[i+1]-1),]
+    U_i <- matrix(U_i, nrow = offset[i+1]-offset[i])
     y_i <- y.new.prog[offset[i]:(offset[i+1]-1)]
     if(is.null(nrow(X_base_i))){
       if(variability_hetero){
