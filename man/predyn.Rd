@@ -2,7 +2,7 @@
 % Please edit documentation in R/predyn.R
 \name{predyn}
 \alias{predyn}
-\title{Dynamic prediction for a new individual}
+\title{Dynamic prediction for new individuals}
 \usage{
 predyn(
   newdata,
@@ -36,7 +36,7 @@ predyn(
 A table of dynamic predictions
 }
 \description{
-Dynamic prediction for a new individual
+Dynamic prediction for new individuals
 }
 \examples{
 \donttest{

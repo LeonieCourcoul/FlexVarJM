@@ -1,4 +1,4 @@
-#' Dynamic prediction for a new individual
+#' Dynamic prediction for new individuals
 #'
 #' @param newdata data frame : collected data for a new individual
 #' @param object lsjm object : estimation of the model
