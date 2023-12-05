@@ -871,6 +871,18 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                               blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
     
   }
+  ## Results for the first step
+  var_trans <- matrix(rep(0,length(binit)**2),nrow=length(binit),ncol=length(binit))
+  var_trans[upper.tri(var_trans, diag=T)] <- estimation$v
+  sd.param <- sqrt(diag(var_trans))
+  param_est <-  estimation$b
+  table.res <- cbind(param_est, sd.param)
+  table.res <- as.data.frame(table.res)
+  colnames(table.res) <- c("Estimation", "SE")
+  rownames(table.res) <- names_param
+  result_step1 <- list("table.res_step1" = table_res,
+                       result_step1 = estimation)
+  ## Results for the second step
   var_trans <- matrix(rep(0,length(binit)**2),nrow=length(binit),ncol=length(binit))
   var_trans[upper.tri(var_trans, diag=T)] <- estimation2$v
   sd.param <- sqrt(diag(var_trans))
@@ -926,7 +938,8 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                                         names_long = colnames(X_base), names_surv = colnames(Z),
                                         names_surv2 = colnames(Z_CR),
                                         likelihood_value = estimation2$fn.value,
-                                        names_param = names_param)
+                                        names_param = names_param),
+                        result_step1 = result_step1
                         
   )
    class(final_object) <- c("lsjm")
