@@ -880,7 +880,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   table.res <- as.data.frame(table.res)
   colnames(table.res) <- c("Estimation", "SE")
   rownames(table.res) <- names_param
-  result_step1 <- list("table.res_step1" = table_res,
+  result_step1 <- list("table.res_step1" = table.res,
                        result_step1 = estimation)
   ## Results for the second step
   var_trans <- matrix(rep(0,length(binit)**2),nrow=length(binit),ncol=length(binit))
