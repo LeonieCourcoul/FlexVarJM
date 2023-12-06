@@ -271,7 +271,7 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
     C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
     MatCov <- C1
   }
-
+  diag(MatCov) <- abs(diag(MatCov))
   #Manage random effects
   random.effects <- Zq%*%t(MatCov)
   b_al <- random.effects[,1:nb.e.a]

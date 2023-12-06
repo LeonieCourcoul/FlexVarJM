@@ -213,6 +213,7 @@ log_llh <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_risk,
     C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
     MatCov <- C1
   }
+  diag(MatCov) <- abs(diag(MatCov))
 
   #Manage random effects
   #browser()
