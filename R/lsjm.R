@@ -82,7 +82,7 @@
 #' @param formSlopeRandom A formula for the random effects of the slope of the longitudinal submodel : the derivative of the formRandom
 #' @param indices_beta_slope A vector of index indicating which beta of the formFixed formula is used in the formSlopeFixed formula
 #' @param nb_pointsGK the number of points for Gauss-Kronrod approximation : choice between 7 and 15. 15 by default.
-#' @param ord.splines  A numeric, the order of splines for the baseline risk function (3 by default)
+#' @param nb.knots.splines  An integer, the number of splines for the baseline risk function (1 by default)
 #' @param competing_risk A logical indicating if the model handles with competing risks
 #' @param formSurv_CR In case of competing risk A formula which indicates the variables used in the survival submodel for the second event
 #' @param hazard_baseline_CR In case of competing risk : a character for the baseline hazard function of the second event
@@ -156,7 +156,7 @@
 lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                  variability_hetero = TRUE, formFixedVar, formRandomVar, correlated_re = FALSE, sharedtype = c("current value", "variability"), hazard_baseline = "Exponential",
                  formSlopeFixed = NULL, formSlopeRandom = NULL, indices_beta_slope = NULL,
-                 nb_pointsGK = 15, ord.splines = 3, competing_risk = FALSE, formSurv_CR = NULL,
+                 nb_pointsGK = 15, nb.knots.splines = 1, competing_risk = FALSE, formSurv_CR = NULL,
                  hazard_baseline_CR = "Exponential", sharedtype_CR = c("current value", "variability"), left_trunc = FALSE,
                  Time.0 = NULL, S1 = 1000, S2= 5000, nproc = 1, clustertype = "SOCK", maxiter = 100,
                  print.info = FALSE, file = NULL, epsa = 1e-03, epsb = 1e-03, epsd = 1e-03, binit = NULL, Comp.Rcpp = TRUE
@@ -164,6 +164,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                  
                        
 ){
+  ord.splines <- 2+nb.knots.splines
   time.prog1 <- Sys.time()
   precision = 0.01
   #Check enter parameters

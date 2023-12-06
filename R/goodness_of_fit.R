@@ -399,8 +399,8 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
   curseur <- curseur+x$control$nb.priorMean.beta
   ## Effets fixes var :
   if(x$control$variability_hetero){
-    omega <- estim_param[curseur:(curseur+x$control$nb.omega-1)]
-    curseur <- curseur + x$control$nb.omega
+    omega <- estim_param[curseur:(curseur+nb.omega-1)]
+    curseur <- curseur + nb.omega
   }
   else{
     sigma.epsilon <- estim_param[curseur]
@@ -412,12 +412,12 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
       borne1 <- curseur + choose(n = x$control$nb.e.a, k = 2) + x$control$nb.e.a - 1
       C1 <- matrix(rep(0,(x$control$nb.e.a)**2),nrow=x$control$nb.e.a,ncol=x$control$nb.e.a)
       C1[lower.tri(C1, diag=T)] <- estim_param[curseur:borne1]
-      C2 <- matrix(estim_param[(borne1+1):(borne1+x$control$nb.e.a.sigma*x$control$nb.e.a)],nrow=x$control$nb.e.a.sigma,ncol=x$control$nb.e.a, byrow = TRUE)
-      borne2 <- borne1+x$control$nb.e.a.sigma*x$control$nb.e.a + 1
-      borne3 <- borne2 + choose(n = x$control$nb.e.a.sigma, k = 2) + x$control$nb.e.a.sigma - 1
-      C3 <- matrix(rep(0,(x$control$nb.e.a.sigma)**2),nrow=x$control$nb.e.a.sigma,ncol=x$control$nb.e.a.sigma)
+      C2 <- matrix(estim_param[(borne1+1):(borne1+nb.e.a.sigma*x$control$nb.e.a)],nrow=nb.e.a.sigma,ncol=x$control$nb.e.a, byrow = TRUE)
+      borne2 <- borne1+nb.e.a.sigma*x$control$nb.e.a + 1
+      borne3 <- borne2 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma - 1
+      C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
       C3[lower.tri(C3, diag=T)] <- estim_param[borne2:borne3]
-      C4 <- matrix(rep(0,x$control$nb.e.a*x$control$nb.e.a.sigma),nrow=x$control$nb.e.a,ncol=x$control$nb.e.a.sigma)
+      C4 <- matrix(rep(0,x$control$nb.e.a*nb.e.a.sigma),nrow=x$control$nb.e.a,ncol=nb.e.a.sigma)
       MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
       MatCov <- as.matrix(MatCov)
       diag(MatCov) <- abs(diag(MatCov))
@@ -426,11 +426,11 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
       borne1 <- curseur + choose(n = x$control$nb.e.a, k = 2) + x$control$nb.e.a - 1
       C1 <- matrix(rep(0,(x$control$nb.e.a)**2),nrow=x$control$nb.e.a,ncol=x$control$nb.e.a)
       C1[lower.tri(C1, diag=T)] <- estim_param[curseur:borne1]
-      borne3 <- borne1 + choose(n = x$control$nb.e.a.sigma, k = 2) + x$control$nb.e.a.sigma
-      C3 <- matrix(rep(0,(x$control$nb.e.a.sigma)**2),nrow=x$control$nb.e.a.sigma,ncol=x$control$nb.e.a.sigma)
+      borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
+      C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
       C3[lower.tri(C3, diag=T)] <- estim_param[(borne1+1):borne3]
-      C4 <- matrix(rep(0,x$control$nb.e.a*x$control$nb.e.a.sigma),nrow=x$control$nb.e.a,ncol=x$control$nb.e.a.sigma)
-      C2.bis <- matrix(rep(0,x$control$nb.e.a*x$control$nb.e.a.sigma),nrow=x$control$nb.e.a.sigma,ncol=x$control$nb.e.a)
+      C4 <- matrix(rep(0,x$control$nb.e.a*nb.e.a.sigma),nrow=x$control$nb.e.a,ncol=nb.e.a.sigma)
+      C2.bis <- matrix(rep(0,x$control$nb.e.a*nb.e.a.sigma),nrow=nb.e.a.sigma,ncol=x$control$nb.e.a)
       MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
       MatCov <- as.matrix(MatCov)
       diag(MatCov) <- abs(diag(MatCov))
@@ -497,7 +497,7 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
     
     Sigma.re <- MatCov%*%t(MatCov)
     if(x$control$variability_hetero){
-      binit <- mvtnorm::rmvnorm(1, mean = rep(0, x$control$nb.e.a+x$control$nb.e.a.sigma), Sigma.re)
+      binit <- mvtnorm::rmvnorm(1, mean = rep(0, x$control$nb.e.a+nb.e.a.sigma), Sigma.re)
     }
     else{
       binit <- mvtnorm::rmvnorm(1, mean = rep(0, x$control$nb.e.a), Sigma.re)
@@ -506,7 +506,7 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
     #Longitudinal prediction
     
     pred.r.e <- marqLevAlg(binit, fn = pred.re, minimize = FALSE,
-                           nb.e.a = x$control$nb.e.a, variability_hetero = x$control$variability_hetero, nb.e.a.sigma = x$control$nb.e.a.sigma,
+                           nb.e.a = x$control$nb.e.a, variability_hetero = x$control$variability_hetero, nb.e.a.sigma = nb.e.a.sigma,
                            Sigma.re = Sigma.re, X_base_i = X_base_i, U_i = U_i, beta = beta, omega = omega, O_base_i = O_base_i,
                            W_base_i = W_base_i, y_i = y_i, sigma.epsilon = sigma.epsilon, Otime_i = Otime_i, Wtime_i = Wtime_i,
                            Os_i = Os_i, Ws_i = Ws_i, S = x$control$S2, alpha.sigma = alpha.sigma, competing_risk = x$control$competing_risk, alpha.sigma.CR = alpha.sigma.CR,
@@ -524,7 +524,7 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
     pred.r.e.table <- rbind(pred.r.e.table,c(data.id$ID[i], pred.r.e$b))
     CV <- X_base_i%*%beta + U_i%*%pred.r.e$b[1:(x$control$nb.e.a)]
     if(x$control$variability_hetero){
-      Var <- O_base_i%*%omega + W_base_i%*%pred.r.e$b[(x$control$nb.e.a+1):(x$control$nb.e.a+x$control$nb.e.a.sigma)]
+      Var <- O_base_i%*%omega + W_base_i%*%pred.r.e$b[(x$control$nb.e.a+1):(x$control$nb.e.a+nb.e.a.sigma)]
     }
     if(x$control$variability_hetero){
       pred.CV <- rbind(pred.CV,cbind(rep(data.id$ID[i],length(CV)), CV,Var,X_base_i[,2]))
@@ -543,7 +543,7 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
                                                             x$control$formFixedVar, x$control$formRandomVar,x$control$timeVar)
         Os.j <- list.data.GK.current.sigma.sort.unique$Xtime
         Ws.j <- list.data.GK.current.sigma.sort.unique$Utime
-        Sigma.current.GK <- exp(omega%*%t(Os_i) + pred.r.e$b[(x$control$nb.e.a+1):(x$control$nb.e.a+x$control$nb.e.a.sigma)]%*%t(Ws_i))
+        Sigma.current.GK <- exp(omega%*%t(Os_i) + pred.r.e$b[(x$control$nb.e.a+1):(x$control$nb.e.a+nb.e.a.sigma)]%*%t(Ws_i))
         if(c("variability") %in% x$control$sharedtype){
           pred_haz <- pred_haz +  alpha.sigma*Sigma.current.GK
         }
