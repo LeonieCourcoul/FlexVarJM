@@ -849,7 +849,10 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     
     binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
     
-    derivees <- marqLevAlg::deriva(funcpa = log_llh_rcpp_cov, nproc = nproc, b = binit_estim2V, 
+    env <- foreach:::.foreachGlobals
+    rm(list=ls(name=env), pos=env)
+    
+    derivees <- marqLevAlg::deriva(nproc = nproc, b = binit_estim2V, funcpa = log_llh_rcpp_cov, 
                                    nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
                                    competing_risk = competing_risk,
                                    nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
@@ -866,7 +869,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                                    nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                                    Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
                                    Os.0 = Os.0, Ws.0 = Ws.0)
-    
+
     H <- matrix(0, length(binit_estim2V), length(binit_estim2V))
     H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
     H <- t(H)
@@ -905,7 +908,6 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     t.deriva2.start <- Sys.time()
     binit_estim2 <- estimation3$b
     binit_estim2_chol <- binit_estim2[(length(binit_estim2)-nb.chol+1):length(binit_estim2)]
-    print("hoho")
     curseur <- 1
     if(variability_hetero){
       if(correlated_re){
@@ -946,8 +948,10 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     
     binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
    
-    print("hoho")
-    derivees <- marqLevAlg::deriva(funcpa = log_llh_rcpp_cov, nproc = nproc, b = binit_estim2V, 
+    env <- foreach:::.foreachGlobals
+    rm(list=ls(name=env), pos=env)
+
+    derivees <- marqLevAlg::deriva(nproc = nproc,b = binit_estim2V, funcpa = log_llh_rcpp_cov,  
                                    nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
                                    competing_risk = competing_risk,
                                    nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,

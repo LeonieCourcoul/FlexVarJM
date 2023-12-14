@@ -21,7 +21,7 @@ lsjm(
   formSlopeRandom = NULL,
   indices_beta_slope = NULL,
   nb_pointsGK = 15,
-  ord.splines = 3,
+  nb.knots.splines = 1,
   competing_risk = FALSE,
   formSurv_CR = NULL,
   hazard_baseline_CR = "Exponential",
@@ -75,7 +75,7 @@ lsjm(
 
 \item{nb_pointsGK}{the number of points for Gauss-Kronrod approximation : choice between 7 and 15. 15 by default.}
 
-\item{ord.splines}{A numeric, the order of splines for the baseline risk function (3 by default)}
+\item{nb.knots.splines}{An integer, the number of splines for the baseline risk function (1 by default)}
 
 \item{competing_risk}{A logical indicating if the model handles with competing risks}
 

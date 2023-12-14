@@ -1,4 +1,4 @@
-#' Log-likelihood computation in RCPP
+#' Log-likelihood computation in RCPP with variance-covariance matrix for the random effects
 #'
 #' @param param a vector : paramaters to be estimated
 #' @param nb.e.a integer : number of RE
@@ -76,7 +76,6 @@ log_llh_rcpp_cov <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competi
                          nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                          Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re, Os.0 = Os.0, Ws.0 = Ws.0
 ){
-  
   #initialisation des paramètres
   #browser()
   Otime_i <- c(1); Wtime_i <- c(1); Os_i <- as.matrix(1); Ws_i <- as.matrix(1); omega <- c(1)
