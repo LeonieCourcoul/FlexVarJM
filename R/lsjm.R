@@ -723,6 +723,9 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                             rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma)))){
           names_param <- c(names_param, paste("chol", i, sep = "_"))
         }
+        nb.chol <- length(c(cholesky_b,
+                          rep(0, nb.e.a*nb.e.a.sigma),
+                          rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma)))
       }
       else{
         binit <- c(binit,
@@ -734,6 +737,8 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
         for(i in 1:length(rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma))){
           names_param <- c(names_param, paste("chol_tau", i, sep = "_"))
         }
+        nb.chol <- length(c(cholesky_b,
+                          rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma)))
       }
       
     }
@@ -743,6 +748,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       for(i in 1:length(cholesky_b)){
         names_param <- c(names_param, paste("chol_b", i, sep = "_"))
       }
+      nb.chol <- length(cholesky_b)
     }
     nb.priorMean.beta = length(priorMean.beta)
     nb.alpha = length(alpha)
@@ -798,9 +804,83 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     else{
       Zq <- randtoolbox::sobol(S2, dim = nb.e.a, normal = TRUE,scrambling = 1)
     }
+    
     message("Second estimation")
-
-    estimation2 <- marqLevAlg(estimation$b, fn = log_llh_rcpp, minimize = FALSE,
+    t.deriva1.start <- Sys.time()
+    binit_estim2 <- estimation$b
+    binit_estim2_chol <- binit_estim2[(length(binit_estim2)-nb.chol+1):length(binit_estim2)]
+    curseur <- 1
+    if(variability_hetero){
+      if(correlated_re){
+        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+        C2 <- matrix(binit_estim2_chol[(borne1+1):(borne1+nb.e.a.sigma*nb.e.a)],nrow=nb.e.a.sigma,ncol=nb.e.a, byrow = TRUE)
+        borne2 <- borne1+nb.e.a.sigma*nb.e.a + 1
+        borne3 <- borne2 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma - 1
+        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+        C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[borne2:borne3]
+        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
+        MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
+        MatCov <- as.matrix(MatCov)
+      }
+      else{
+        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+        borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
+        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+        C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[(borne1+1):borne3]
+        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
+        C2.bis <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a.sigma,ncol=nb.e.a)
+        MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
+        MatCov <- as.matrix(MatCov)
+      }
+    }
+    else{
+      borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+      C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+      MatCov <- C1
+    }
+    
+    MatCov_cov <- MatCov%*%t(MatCov)
+    elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+    
+    binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
+    
+    derivees <- marqLevAlg::deriva(funcpa = log_llh_rcpp_cov, nproc = nproc, b = binit_estim2V, 
+                                   nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
+                                   competing_risk = competing_risk,
+                                   nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
+                                   sharedtype_CR = sharedtype_CR,
+                                   hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                                   Utime = Utime, nb_pointsGK = nb_pointsGK,
+                                   Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
+                                   indices_beta_slope = indices_beta_slope, Time =Time,
+                                   st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
+                                   Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
+                                   Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
+                                   B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
+                                   
+                                   nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
+                                   Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
+                                   Os.0 = Os.0, Ws.0 = Ws.0)
+    
+    H <- matrix(0, length(binit_estim2V), length(binit_estim2V))
+    H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
+    H <- t(H)
+    H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
+    Vprm.1 <- NULL
+    SEprm.1 <- NULL
+    Vprm.1 <- try(solve(H), silent = TRUE)
+    SEprm.1 <- try(sqrt(diag(Vprm.1)), silent = TRUE)
+    t.deriva1.end <- Sys.time()
+    derivees1 <- derivees
+    
+    message("estimation3")
+    
+    estimation3 <- marqLevAlg(estimation$b, fn = log_llh_rcpp, minimize = FALSE,
                               nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
                               competing_risk = competing_risk,
                               nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
@@ -819,8 +899,82 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                               Os.0 = Os.0, Ws.0 = Ws.0, 
                               
                               nproc = nproc, clustertype = clustertype, maxiter = maxiter, print.info = print.info, file = file,
-                              blinding = FALSE, epsa = epsa, epsb = epsb, epsd = epsd)
+                              blinding = FALSE, epsa = 2, epsb = 2, epsd = 0.999999)
     
+    message("estimation4")
+    t.deriva2.start <- Sys.time()
+    binit_estim2 <- estimation3$b
+    binit_estim2_chol <- binit_estim2[(length(binit_estim2)-nb.chol+1):length(binit_estim2)]
+    print("hoho")
+    curseur <- 1
+    if(variability_hetero){
+      if(correlated_re){
+        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+        C2 <- matrix(binit_estim2_chol[(borne1+1):(borne1+nb.e.a.sigma*nb.e.a)],nrow=nb.e.a.sigma,ncol=nb.e.a, byrow = TRUE)
+        borne2 <- borne1+nb.e.a.sigma*nb.e.a + 1
+        borne3 <- borne2 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma - 1
+        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+        C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[borne2:borne3]
+        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
+        MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
+        MatCov <- as.matrix(MatCov)
+      }
+      else{
+        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+        borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
+        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+        C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[(borne1+1):borne3]
+        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
+        C2.bis <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a.sigma,ncol=nb.e.a)
+        MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
+        MatCov <- as.matrix(MatCov)
+      }
+    }
+    else{
+      borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+      C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+      MatCov <- C1
+    }
+    
+    MatCov_cov <- MatCov%*%t(MatCov)
+    elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+    
+    binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
+   
+    print("hoho")
+    derivees <- marqLevAlg::deriva(funcpa = log_llh_rcpp_cov, nproc = nproc, b = binit_estim2V, 
+                                   nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
+                                   competing_risk = competing_risk,
+                                   nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
+                                   sharedtype_CR = sharedtype_CR,
+                                   hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                                   Utime = Utime, nb_pointsGK = nb_pointsGK,
+                                   Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
+                                   indices_beta_slope = indices_beta_slope, Time =Time,
+                                   st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
+                                   Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
+                                   Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
+                                   B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
+                                   
+                                   nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
+                                   Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
+                                   Os.0 = Os.0, Ws.0 = Ws.0)
+    
+    H <- matrix(0, length(binit_estim2V), length(binit_estim2V))
+    H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
+    H <- t(H)
+    H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
+    Vprm.2 <- NULL
+    SEprm.2 <- NULL
+    Vprm.2 <- try(solve(H), silent = TRUE)
+    SEprm.2 <- try(sqrt(diag(Vprm.2)), silent = TRUE)
+    t.deriva2.end <- Sys.time()
+    derivees2 <- derivees
   }
   else{
     estimation <- marqLevAlg(binit, fn = log_llh, minimize = FALSE,
@@ -873,31 +1027,49 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     
   }
   ## Results for the first step
-  var_trans <- matrix(rep(0,length(binit)**2),nrow=length(binit),ncol=length(binit))
+  var_trans <- matrix(rep(0,length(estimation$b)**2),nrow=length(estimation$b),ncol=length(estimation$b))
   var_trans[upper.tri(var_trans, diag=T)] <- estimation$v
   sd.param <- sqrt(diag(var_trans))
   param_est <-  estimation$b
   table.res <- cbind(param_est, sd.param)
   table.res <- as.data.frame(table.res)
   colnames(table.res) <- c("Estimation", "SE")
-  rownames(table.res) <- names_param
+  #rownames(table.res) <- names_param
   result_step1 <- list("table.res_step1" = table.res,
                        result_step1 = estimation)
   ## Results for the second step
-  var_trans <- matrix(rep(0,length(binit)**2),nrow=length(binit),ncol=length(binit))
-  var_trans[upper.tri(var_trans, diag=T)] <- estimation2$v
+  result_step2 <- list(estimation = estimation$b,
+                       variance = Vprm.1,
+                       sd = SEprm.1,
+                       result_step2 = derivees1,
+                       time.deriva <- difftime(t.deriva1.start, t.deriva1.end))
+  ## Results for the third step
+  var_trans <- matrix(rep(0,length(estimation3$b)**2),nrow=length(estimation3$b),ncol=length(estimation3$b))
+  var_trans[upper.tri(var_trans, diag=T)] <- estimation3$v
   sd.param <- sqrt(diag(var_trans))
-  param_est <-  estimation2$b
+  param_est <-  estimation3$b
   table.res <- cbind(param_est, sd.param)
   table.res <- as.data.frame(table.res)
   colnames(table.res) <- c("Estimation", "SE")
-  rownames(table.res) <- names_param
+  #rownames(table.res) <- names_param
+  result_step3 <- list("table.res_step3" = table.res,
+                       result_step3 = estimation3)
+  
+  ## Results for the thourth step
+  result_step4 <- list(estimation = estimation3$b,
+                       variance = Vprm.2,
+                       sd = SEprm.2,
+                       result_step4 = derivees2,
+                       time.deriva <- difftime(t.deriva2.start, t.deriva2.end))
   
   time.prog2 <- Sys.time()
   time.prog.fin <- difftime(time.prog2, time.prog1)
   
   
-  final_object <- list( result = estimation2,
+  final_object <- list( result_step1 = result_step1,
+                        result_step2 = result_step2,
+                        result_step3 = result_step3,
+                        result_step4 = result_step4,
                         table.res = table.res,
                         time.compute = time.prog.fin,
                         control = list( formFixed = formFixed,
@@ -934,13 +1106,12 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                                         nb.omega = nb.omega,
                                         nb.e.a.sigma = nb.e.a.sigma,
                                         correlated_re = correlated_re,
-                                        Ind = Ind, conv = estimation2$istop, niter = estimation2$ni,
-                                        convcrit = c(estimation2$ca, estimation2$cb, estimation2$rdm),
+                                        Ind = Ind, conv = estimation3$istop, niter = estimation3$ni,
+                                        convcrit = c(estimation3$ca, estimation3$cb, estimation3$rdm),
                                         names_long = colnames(X_base), names_surv = colnames(Z),
                                         names_surv2 = colnames(Z_CR),
-                                        likelihood_value = estimation2$fn.value,
-                                        names_param = names_param),
-                        result_step1 = result_step1
+                                        likelihood_value = estimation3$fn.value,
+                                        names_param = names_param)
                         
   )
    class(final_object) <- c("lsjm")
