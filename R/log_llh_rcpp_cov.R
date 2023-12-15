@@ -244,6 +244,7 @@ log_llh_rcpp_cov <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competi
   MatCov[lower.tri(MatCov, diag = TRUE)]  <- MatCovElements
   MatCov_fin <- MatCov+t(MatCov)
   diag(MatCov_fin) <- diag(MatCov_fin)/2
+  print(MatCov_fin)
   #Manage random effects
   
   MatCov_chol <- t(chol(MatCov_fin))

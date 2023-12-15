@@ -851,7 +851,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     
     env <- foreach:::.foreachGlobals
     rm(list=ls(name=env), pos=env)
-    
+    print("go")
     derivees <- marqLevAlg::deriva(nproc = nproc, b = binit_estim2V, funcpa = log_llh_rcpp_cov, 
                                    nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
                                    competing_risk = competing_risk,
@@ -869,7 +869,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                                    nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                                    Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
                                    Os.0 = Os.0, Ws.0 = Ws.0)
-
+    print("ok")
     H <- matrix(0, length(binit_estim2V), length(binit_estim2V))
     H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
     H <- t(H)
