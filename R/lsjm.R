@@ -1046,7 +1046,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                        variance = Vprm.1,
                        sd = SEprm.1,
                        result_step2 = derivees1,
-                       time.deriva <- difftime(t.deriva1.start, t.deriva1.end))
+                       time.deriva = difftime(t.deriva1.start, t.deriva1.end))
   ## Results for the third step
   var_trans <- matrix(rep(0,length(estimation3$b)**2),nrow=length(estimation3$b),ncol=length(estimation3$b))
   var_trans[upper.tri(var_trans, diag=T)] <- estimation3$v
@@ -1064,7 +1064,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                        variance = Vprm.2,
                        sd = SEprm.2,
                        result_step4 = derivees2,
-                       time.deriva <- difftime(t.deriva2.start, t.deriva2.end))
+                       time.deriva = difftime(t.deriva2.start, t.deriva2.end))
   
   time.prog2 <- Sys.time()
   time.prog.fin <- difftime(time.prog2, time.prog1)
