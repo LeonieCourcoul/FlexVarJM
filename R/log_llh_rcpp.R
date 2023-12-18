@@ -240,17 +240,15 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
   ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
   if(variability_hetero){
     if(correlated_re){
-      borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
-      C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
-      C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
-      C2 <- matrix(param[(borne1+1):(borne1+nb.e.a.sigma*nb.e.a)],nrow=nb.e.a.sigma,ncol=nb.e.a, byrow = TRUE)
-      borne2 <- borne1+nb.e.a.sigma*nb.e.a + 1
-      borne3 <- borne2 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma - 1
-      C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
-      C3[lower.tri(C3, diag=T)] <- param[borne2:borne3]
-      C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
-      MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
+      C1 <- matrix(rep(0,(nb.e.a+nb.e.a.sigma)**2),nrow=nb.e.a+nb.e.a.sigma,ncol=nb.e.a+nb.e.a.sigma)
+      C1[lower.tri(C1, diag=T)] <- param[curseur:length(param)]
+      MatCov <- C1
       MatCov <- as.matrix(MatCov)
+      random.effects <- Zq%*%t(MatCov)
+      b_al <- random.effects[,1:nb.e.a]
+      b_al <- matrix(b_al, ncol = nb.e.a)
+      b_om <- random.effects[,(nb.e.a+1):(nb.e.a+nb.e.a.sigma)]
+      b_om <- matrix(b_om, ncol = nb.e.a.sigma)
     }
     else{
       borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
@@ -259,30 +257,28 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
       borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
       C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
       C3[lower.tri(C3, diag=T)] <- param[(borne1+1):borne3]
-      C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
-      C2.bis <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a.sigma,ncol=nb.e.a)
-      MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
-      MatCov <- as.matrix(MatCov)
+      MatCovb <- as.matrix(C1)
+      MatCovSig <- as.matrix(C3)
+      b_al <- Zq[,1:nb.e.a]%*%t(MatCovb)
+      b_al <- matrix(b_al, ncol = nb.e.a)
+      b_om <- Zq[,1:nb.e.a.sigma]%*%t(MatCovSig)
+      b_om <- matrix(b_om, ncol = nb.e.a.sigma)
     }
   }
   else{
     borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
     C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
     C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
-    MatCov <- C1
+    MatCov <- as.matrix(C1)
+    b_al <- Zq%*%t(MatCov)
+    b_al <- matrix(b_al, ncol = nb.e.a)
   }
   #Manage random effects
-  random.effects <- Zq%*%t(MatCov)
-  b_al <- random.effects[,1:nb.e.a]
-  b_al <- matrix(b_al, ncol = nb.e.a)
+  
   if("slope" %in% sharedtype || (competing_risk && "slope" %in% sharedtype_CR)){
     b_al_slope <- as.matrix(b_al[,-1])
   }
-  # browser()
-  if(variability_hetero){
-    b_om <- random.effects[,(nb.e.a+1):(nb.e.a+nb.e.a.sigma)]
-    b_om <- matrix(b_om, ncol = nb.e.a.sigma)
-  }
+
   ll_glob <- 0
   sht <- list(sharedtype, sharedtype_CR)
   HB <- list(hazard_baseline, hazard_baseline_CR)
@@ -392,6 +388,6 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
     ll_glob <- -10E8
   }
   
-  #print(ll_glob)
+  print(ll_glob)
   ll_glob
 }

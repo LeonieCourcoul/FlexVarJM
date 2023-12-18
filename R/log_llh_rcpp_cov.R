@@ -239,26 +239,77 @@ log_llh_rcpp_cov <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competi
   ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
 
   MatCovElements <- param[curseur:length(param)]
-
-  MatCov <- matrix(0,ncol = nb.e.a+nb.e.a.sigma, nrow =  nb.e.a+nb.e.a.sigma)
-  MatCov[lower.tri(MatCov, diag = TRUE)]  <- MatCovElements
-  MatCov_fin <- MatCov+t(MatCov)
-  diag(MatCov_fin) <- diag(MatCov_fin)/2
-  print(MatCov_fin)
-  #Manage random effects
   
-  MatCov_chol <- t(chol(MatCov_fin))
-  random.effects <- Zq%*%t(MatCov_chol)
-  b_al <- random.effects[,1:nb.e.a]
-  b_al <- matrix(b_al, ncol = nb.e.a)
+  ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
+  if(variability_hetero){
+    if(correlated_re){
+      C1 <- matrix(rep(0,(nb.e.a+nb.e.a.sigma)**2),nrow=nb.e.a+nb.e.a.sigma,ncol=nb.e.a+nb.e.a.sigma)
+      C1[lower.tri(C1, diag=T)] <- MatCovElements
+      MatCov <- C1
+      MatCov <- as.matrix(MatCov)
+      MatCov_fin <- MatCov+t(MatCov)
+      diag(MatCov_fin) <- diag(MatCov_fin)/2
+      MatCov_chol <- chol(MatCov_fin)
+      random.effects <- Zq%*%MatCov_chol
+      b_al <- random.effects[,1:nb.e.a]
+      b_al <- matrix(b_al, ncol = nb.e.a)
+      b_om <- random.effects[,(nb.e.a+1):(nb.e.a+nb.e.a.sigma)]
+      b_om <- matrix(b_om, ncol = nb.e.a.sigma)
+    }
+    else{
+      borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+      C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
+      borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
+      C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+      C3[lower.tri(C3, diag=T)] <- param[(borne1+1):borne3]
+      MatCovb <- as.matrix(C1)
+      MatCov_finb <- MatCovb+t(MatCovb)
+      diag(MatCov_finb) <- diag(MatCov_finb)/2
+      MatCov_cholb <- chol(MatCov_finb)
+      MatCovSig <- as.matrix(C3)
+      MatCov_finSig <- MatCovSig+t(MatCovSig)
+      MatCov_cholSig <- chol(MatCov_finSig)
+      diag(MatCov_finSig) <- diag(MatCov_finSig)/2
+      MatCov_cholSig <- chol(MatCov_finSig)
+      b_al <- Zq[,1:nb.e.a]%*%MatCov_cholb
+      b_al <- matrix(b_al, ncol = nb.e.a)
+      b_om <- Zq[,(nb.e.a+1):(nb.e.a+nb.e.a.sigma)]%*%MatCov_cholSig
+      b_om <- matrix(b_om, ncol = nb.e.a.sigma)
+    }
+  }
+  else{
+    borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+    C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+    C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
+    MatCov <- as.matrix(C1)
+    MatCov <- as.matrix(MatCov)
+    MatCov_fin <- MatCov+t(MatCov)
+    diag(MatCov_fin) <- diag(MatCov_fin)/2
+    MatCov_chol <- chol(MatCov_fin)
+    b_al <- Zq%*%MatCov_chol
+    b_al <- matrix(b_al, ncol = nb.e.a)
+  }
+
+  #MatCov <- matrix(0,ncol = nb.e.a+nb.e.a.sigma, nrow =  nb.e.a+nb.e.a.sigma)
+  #MatCov[lower.tri(MatCov, diag = TRUE)]  <- MatCovElements
+  #MatCov_fin <- MatCov+t(MatCov)
+  #diag(MatCov_fin) <- diag(MatCov_fin)/2
+  #print(MatCov_fin)
+  ##Manage random effects
+  #
+  #MatCov_chol <- t(chol(MatCov_fin))
+  #random.effects <- Zq%*%t(MatCov_chol)
+  #b_al <- random.effects[,1:nb.e.a]
+  #b_al <- matrix(b_al, ncol = nb.e.a)
   if("slope" %in% sharedtype || (competing_risk && "slope" %in% sharedtype_CR)){
     b_al_slope <- as.matrix(b_al[,-1])
   }
   # browser()
-  if(variability_hetero){
-    b_om <- random.effects[,(nb.e.a+1):(nb.e.a+nb.e.a.sigma)]
-    b_om <- matrix(b_om, ncol = nb.e.a.sigma)
-  }
+ # if(variability_hetero){
+ #   b_om <- random.effects[,(nb.e.a+1):(nb.e.a+nb.e.a.sigma)]
+ #   b_om <- matrix(b_om, ncol = nb.e.a.sigma)
+ # }
   ll_glob <- 0
   sht <- list(sharedtype, sharedtype_CR)
   HB <- list(hazard_baseline, hazard_baseline_CR)

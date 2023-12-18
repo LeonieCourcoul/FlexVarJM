@@ -810,19 +810,18 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     binit_estim2 <- estimation$b
     binit_estim2_chol <- binit_estim2[(length(binit_estim2)-nb.chol+1):length(binit_estim2)]
     curseur <- 1
+    ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
     if(variability_hetero){
       if(correlated_re){
-        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
-        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
-        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
-        C2 <- matrix(binit_estim2_chol[(borne1+1):(borne1+nb.e.a.sigma*nb.e.a)],nrow=nb.e.a.sigma,ncol=nb.e.a, byrow = TRUE)
-        borne2 <- borne1+nb.e.a.sigma*nb.e.a + 1
-        borne3 <- borne2 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma - 1
-        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
-        C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[borne2:borne3]
-        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
-        MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
+        C1 <- matrix(rep(0,(nb.e.a+nb.e.a.sigma)**2),nrow=nb.e.a+nb.e.a.sigma,ncol=nb.e.a+nb.e.a.sigma)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:length(binit_estim2_chol)]
+        MatCov <- C1
         MatCov <- as.matrix(MatCov)
+        
+        MatCov_cov <- MatCov%*%t(MatCov)
+        elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+        
+        binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
       }
       else{
         borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
@@ -831,23 +830,34 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
         borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
         C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
         C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[(borne1+1):borne3]
-        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
-        C2.bis <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a.sigma,ncol=nb.e.a)
-        MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
-        MatCov <- as.matrix(MatCov)
+        MatCovb <- as.matrix(C1)
+        MatCovSig <- as.matrix(C3)
+        
+        MatCov_covb <- MatCovb%*%t(MatCovb)
+        elementsMatCov_covb <- MatCov_covb[lower.tri(MatCov_covb, diag=T)]
+        
+        MatCov_covSig <- MatCovSig%*%t(MatCovSig)
+        elementsMatCov_covSig <- MatCov_covSig[lower.tri(MatCov_covSig, diag=T)]
+        
+        binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_covb,elementsMatCov_covSig)
       }
     }
     else{
       borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
       C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
       C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
-      MatCov <- C1
+      MatCov <- as.matrix(C1)
+      
+      MatCov_cov <- MatCov%*%t(MatCov)
+      elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+      
+      binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
     }
     
-    MatCov_cov <- MatCov%*%t(MatCov)
-    elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+   # MatCov_cov <- MatCov%*%t(MatCov)
+   # elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
     
-    binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
+    #binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
     
     env <- foreach:::.foreachGlobals
     rm(list=ls(name=env), pos=env)
@@ -880,6 +890,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     SEprm.1 <- try(sqrt(diag(Vprm.1)), silent = TRUE)
     t.deriva1.end <- Sys.time()
     derivees1 <- derivees
+    mean2 <- binit_estim2V
     
     message("estimation3")
     
@@ -909,19 +920,18 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     binit_estim2 <- estimation3$b
     binit_estim2_chol <- binit_estim2[(length(binit_estim2)-nb.chol+1):length(binit_estim2)]
     curseur <- 1
+    ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
     if(variability_hetero){
       if(correlated_re){
-        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
-        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
-        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
-        C2 <- matrix(binit_estim2_chol[(borne1+1):(borne1+nb.e.a.sigma*nb.e.a)],nrow=nb.e.a.sigma,ncol=nb.e.a, byrow = TRUE)
-        borne2 <- borne1+nb.e.a.sigma*nb.e.a + 1
-        borne3 <- borne2 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma - 1
-        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
-        C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[borne2:borne3]
-        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
-        MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
+        C1 <- matrix(rep(0,(nb.e.a+nb.e.a.sigma)**2),nrow=nb.e.a+nb.e.a.sigma,ncol=nb.e.a+nb.e.a.sigma)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:length(binit_estim2_chol)]
+        MatCov <- C1
         MatCov <- as.matrix(MatCov)
+        
+        MatCov_cov <- MatCov%*%t(MatCov)
+        elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+        
+        binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
       }
       else{
         borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
@@ -930,23 +940,31 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
         borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
         C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
         C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[(borne1+1):borne3]
-        C4 <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a,ncol=nb.e.a.sigma)
-        C2.bis <- matrix(rep(0,nb.e.a*nb.e.a.sigma),nrow=nb.e.a.sigma,ncol=nb.e.a)
-        MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
-        MatCov <- as.matrix(MatCov)
+        MatCovb <- as.matrix(C1)
+        MatCovSig <- as.matrix(C3)
+        
+        MatCov_covb <- MatCovb%*%t(MatCovb)
+        elementsMatCov_covb <- MatCov_covb[lower.tri(MatCov_covb, diag=T)]
+        
+        MatCov_covSig <- MatCovSig%*%t(MatCovSig)
+        elementsMatCov_covSig <- MatCov_covSig[lower.tri(MatCov_covSig, diag=T)]
+        
+        binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_covb,elementsMatCov_covSig)
       }
     }
     else{
       borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
       C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
       C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
-      MatCov <- C1
+      MatCov <- as.matrix(C1)
+      
+      MatCov_cov <- MatCov%*%t(MatCov)
+      elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+      
+      binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
     }
     
-    MatCov_cov <- MatCov%*%t(MatCov)
-    elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
     
-    binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
    
     env <- foreach:::.foreachGlobals
     rm(list=ls(name=env), pos=env)
@@ -979,6 +997,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     SEprm.2 <- try(sqrt(diag(Vprm.2)), silent = TRUE)
     t.deriva2.end <- Sys.time()
     derivees2 <- derivees
+    mean4 <- binit_estim2V
   }
   else{
     estimation <- marqLevAlg(binit, fn = log_llh, minimize = FALSE,
@@ -1042,7 +1061,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   result_step1 <- list("table.res_step1" = table.res,
                        result_step1 = estimation)
   ## Results for the second step
-  result_step2 <- list(estimation = estimation$b,
+  result_step2 <- list(estimation = mean2,
                        variance = Vprm.1,
                        sd = SEprm.1,
                        result_step2 = derivees1,
@@ -1060,7 +1079,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                        result_step3 = estimation3)
   
   ## Results for the thourth step
-  result_step4 <- list(estimation = estimation3$b,
+  result_step4 <- list(estimation = mean4,
                        variance = Vprm.2,
                        sd = SEprm.2,
                        result_step4 = derivees2,
