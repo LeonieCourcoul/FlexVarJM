@@ -806,7 +806,6 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     }
     
     message("Second estimation")
-    t.deriva1.start <- Sys.time()
     binit_estim2 <- estimation$b
     binit_estim2_chol <- binit_estim2[(length(binit_estim2)-nb.chol+1):length(binit_estim2)]
     curseur <- 1
@@ -853,16 +852,22 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       
       binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
     }
-    
-   # MatCov_cov <- MatCov%*%t(MatCov)
-   # elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
-    
-    #binit_estim2V <- c(binit_estim2[1:(length(binit_estim2)-nb.chol)],elementsMatCov_cov)
-    
-    env <- foreach:::.foreachGlobals
-    rm(list=ls(name=env), pos=env)
-    print("go")
-    derivees <- marqLevAlg::deriva(nproc = nproc, b = binit_estim2V, funcpa = log_llh_rcpp_cov, 
+    #env <- foreach:::.foreachGlobals
+    #rm(list=ls(name=env), pos=env)
+    cl <- match.call()
+    if(nproc>1){
+      if(is.null(clustertype)){
+        clustpar <- parallel::makeCluster(nproc)#, outfile="")
+      }
+      else{
+        clustpar <- parallel::makeCluster(nproc, type=clustertype)#, outfile="")
+      }
+      
+      doParallel::registerDoParallel(clustpar)
+    }
+    ptm <- proc.time()
+    derivees <- NULL
+    derivees <- try(marqLevAlg::deriva(nproc = nproc, b = binit_estim2V, funcpa = log_llh_rcpp_cov, 
                                    nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
                                    competing_risk = competing_risk,
                                    nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
@@ -878,19 +883,112 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                                    
                                    nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                                    Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
-                                   Os.0 = Os.0, Ws.0 = Ws.0)
-    print("ok")
+                                   Os.0 = Os.0, Ws.0 = Ws.0), silent = TRUE)
+    if(nproc >1){
+      parallel::stopCluster(clustpar)
+    }
     H <- matrix(0, length(binit_estim2V), length(binit_estim2V))
-    H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
-    H <- t(H)
-    H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
+    H[upper.tri(H, diag = TRUE)] <- try(derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)],silent=TRUE)
+    H <- try(t(H),silent=TRUE)
+    H[upper.tri(H, diag = TRUE)] <- try(derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)],silent=TRUE)
     Vprm.1 <- NULL
     SEprm.1 <- NULL
     Vprm.1 <- try(solve(H), silent = TRUE)
     SEprm.1 <- try(sqrt(diag(Vprm.1)), silent = TRUE)
-    t.deriva1.end <- Sys.time()
     derivees1 <- derivees
     mean2 <- binit_estim2V
+    cost2 <- proc.time() - ptm
+    
+    message("Second estimation bis")
+    binit_estim2 <- estimation$b
+    binit_estim2_chol <- binit_estim2[(length(binit_estim2)-nb.chol+1):length(binit_estim2)]
+    curseur <- 1
+    ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
+    if(variability_hetero){
+      if(correlated_re){
+        C1 <- matrix(rep(0,(nb.e.a+nb.e.a.sigma)**2),nrow=nb.e.a+nb.e.a.sigma,ncol=nb.e.a+nb.e.a.sigma)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:length(binit_estim2_chol)]
+        MatCov <- C1
+        MatCov <- as.matrix(MatCov)
+        
+        MatCov_cov <- MatCov%*%t(MatCov)
+        elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+      }
+      else{
+        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+        borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
+        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+        C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[(borne1+1):borne3]
+        MatCovb <- as.matrix(C1)
+        MatCovSig <- as.matrix(C3)
+        
+        MatCov_covb <- MatCovb%*%t(MatCovb)
+        elementsMatCov_covb <- MatCov_covb[lower.tri(MatCov_covb, diag=T)]
+        
+        MatCov_covSig <- MatCovSig%*%t(MatCovSig)
+        elementsMatCov_covSig <- MatCov_covSig[lower.tri(MatCov_covSig, diag=T)]
+        
+        elementsMatCov_cov <- c(elementsMatCov_covb,elementsMatCov_covSig)
+      }
+    }
+    else{
+      borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+      C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+      MatCov <- as.matrix(C1)
+      
+      MatCov_cov <- MatCov%*%t(MatCov)
+      elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+    }
+    #env <- foreach:::.foreachGlobals
+    #rm(list=ls(name=env), pos=env)
+    cl <- match.call()
+    if(nproc>1){
+      if(is.null(clustertype)){
+        clustpar <- parallel::makeCluster(nproc)#, outfile="")
+      }
+      else{
+        clustpar <- parallel::makeCluster(nproc, type=clustertype)#, outfile="")
+      }
+      
+      doParallel::registerDoParallel(clustpar)
+    }
+    ptm <- proc.time()
+    derivees <- NULL
+    derivees <- marqLevAlg::deriva(nproc = nproc, b = binit_estim2[1:(length(binit_estim2)-nb.chol)], funcpa = log_llh_rcpp_cov_partialH, 
+                                       elementsMatCov_cov = elementsMatCov_cov,  nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
+                                       competing_risk = competing_risk,
+                                       nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
+                                       sharedtype_CR = sharedtype_CR,
+                                       hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                                       Utime = Utime, nb_pointsGK = nb_pointsGK,
+                                       Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
+                                       indices_beta_slope = indices_beta_slope, Time =Time,
+                                       st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
+                                       Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
+                                       Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
+                                       B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
+                                       
+                                       nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
+                                       Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
+                                       Os.0 = Os.0, Ws.0 = Ws.0)#, silent = TRUE)
+    if(nproc >1){
+      parallel::stopCluster(clustpar)
+    }
+    H <- matrix(0, length(binit_estim2[1:(length(binit_estim2)-nb.chol)]), length(binit_estim2[1:(length(binit_estim2)-nb.chol)]))
+    H[upper.tri(H, diag = TRUE)] <- try(derivees$v[1:(length(binit_estim2[1:(length(binit_estim2)-nb.chol)]) * (length(binit_estim2[1:(length(binit_estim2)-nb.chol)]) + 1) / 2)],silent=TRUE)
+    H <- try(t(H),silent=TRUE)
+    H[upper.tri(H, diag = TRUE)] <- try(derivees$v[1:(length(binit_estim2[1:(length(binit_estim2)-nb.chol)]) * (length(binit_estim2[1:(length(binit_estim2)-nb.chol)]) + 1) / 2)],silent=TRUE)
+    Vprm.1bis <- NULL
+    SEprm.1bis <- NULL
+    Vprm.1bis <- try(solve(H), silent = TRUE)
+    SEprm.1bis <- try(sqrt(diag(Vprm.1bis)), silent = TRUE)
+    derivees1bis <- derivees
+    mean2bis <- binit_estim2[1:(length(binit_estim2)-nb.chol)]
+    cost2bis <- proc.time() - ptm
+    
     
     message("estimation3")
     
@@ -966,10 +1064,22 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     
     
    
-    env <- foreach:::.foreachGlobals
-    rm(list=ls(name=env), pos=env)
-
-    derivees <- marqLevAlg::deriva(nproc = nproc,b = binit_estim2V, funcpa = log_llh_rcpp_cov,  
+   # env <- foreach:::.foreachGlobals
+   # rm(list=ls(name=env), pos=env)
+    cl <- match.call()
+    if(nproc>1){
+      if(is.null(clustertype)){
+        clustpar <- parallel::makeCluster(nproc)#, outfile="")
+      }
+      else{
+        clustpar <- parallel::makeCluster(nproc, type=clustertype)#, outfile="")
+      }
+      
+      doParallel::registerDoParallel(clustpar)
+    }
+    ptm <- proc.time()
+    derivees <- NULL
+    derivees <- try(marqLevAlg::deriva(nproc = nproc,b = binit_estim2V, funcpa = log_llh_rcpp_cov,  
                                    nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
                                    competing_risk = competing_risk,
                                    nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
@@ -985,19 +1095,118 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                                    
                                    nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
                                    Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
-                                   Os.0 = Os.0, Ws.0 = Ws.0)
+                                   Os.0 = Os.0, Ws.0 = Ws.0),silent=TRUE)
+    if(nproc >1){
+      parallel::stopCluster(clustpar)
+    }
     
     H <- matrix(0, length(binit_estim2V), length(binit_estim2V))
-    H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
-    H <- t(H)
-    H[upper.tri(H, diag = TRUE)] <- derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)]
+    H[upper.tri(H, diag = TRUE)] <- try(derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)],silent=TRUE)
+    H <- try(t(H),silent=TRUE)
+    H[upper.tri(H, diag = TRUE)] <- try(derivees$v[1:(length(binit_estim2V) * (length(binit_estim2V) + 1) / 2)],silent=TRUE)
     Vprm.2 <- NULL
     SEprm.2 <- NULL
     Vprm.2 <- try(solve(H), silent = TRUE)
     SEprm.2 <- try(sqrt(diag(Vprm.2)), silent = TRUE)
-    t.deriva2.end <- Sys.time()
     derivees2 <- derivees
     mean4 <- binit_estim2V
+    cost4 <- proc.time() - ptm
+    
+    message("estimation4bis")
+    binit_estim2 <- estimation3$b
+    binit_estim2_chol <- binit_estim2[(length(binit_estim2)-nb.chol+1):length(binit_estim2)]
+    curseur <- 1
+    ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
+    if(variability_hetero){
+      if(correlated_re){
+        C1 <- matrix(rep(0,(nb.e.a+nb.e.a.sigma)**2),nrow=nb.e.a+nb.e.a.sigma,ncol=nb.e.a+nb.e.a.sigma)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:length(binit_estim2_chol)]
+        MatCov <- C1
+        MatCov <- as.matrix(MatCov)
+        
+        MatCov_cov <- MatCov%*%t(MatCov)
+        elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+        
+       
+      }
+      else{
+        borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+        C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+        borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
+        C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+        C3[lower.tri(C3, diag=T)] <- binit_estim2_chol[(borne1+1):borne3]
+        MatCovb <- as.matrix(C1)
+        MatCovSig <- as.matrix(C3)
+        
+        MatCov_covb <- MatCovb%*%t(MatCovb)
+        elementsMatCov_covb <- MatCov_covb[lower.tri(MatCov_covb, diag=T)]
+        
+        MatCov_covSig <- MatCovSig%*%t(MatCovSig)
+        elementsMatCov_covSig <- MatCov_covSig[lower.tri(MatCov_covSig, diag=T)]
+        
+        elementsMatCov_cov <- c(elementsMatCov_covb,elementsMatCov_covSig)
+      }
+    }
+    else{
+      borne1 <- curseur + choose(n = nb.e.a, k = 2) + nb.e.a - 1
+      C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- binit_estim2_chol[curseur:borne1]
+      MatCov <- as.matrix(C1)
+      
+      MatCov_cov <- MatCov%*%t(MatCov)
+      elementsMatCov_cov <- MatCov_cov[lower.tri(MatCov_cov, diag=T)]
+    }
+    
+    
+    
+    # env <- foreach:::.foreachGlobals
+    # rm(list=ls(name=env), pos=env)
+    cl <- match.call()
+    if(nproc>1){
+      if(is.null(clustertype)){
+        clustpar <- parallel::makeCluster(nproc)#, outfile="")
+      }
+      else{
+        clustpar <- parallel::makeCluster(nproc, type=clustertype)#, outfile="")
+      }
+      
+      doParallel::registerDoParallel(clustpar)
+    }
+    ptm <- proc.time()
+    derivees <- NULL
+    derivees <- try(marqLevAlg::deriva(nproc = nproc,b = binit_estim2[1:(length(binit_estim2)-nb.chol)], funcpa = log_llh_rcpp_cov_partialH,  
+                                       elementsMatCov_cov = elementsMatCov_cov, nb.e.a = nb.e.a, nb.priorMean.beta = nb.priorMean.beta,nb.alpha = nb.alpha,
+                                       competing_risk = competing_risk,
+                                       nb.alpha.CR = nb.alpha.CR, variability_hetero = variability_hetero, S = S2,Zq = Zq, sharedtype = sharedtype,
+                                       sharedtype_CR = sharedtype_CR,
+                                       hazard_baseline = hazard_baseline, hazard_baseline_CR = hazard_baseline_CR, ord.splines = ord.splines, Xtime = Xtime,
+                                       Utime = Utime, nb_pointsGK = nb_pointsGK,
+                                       Xs = Xs,Us = Us, Xslope = Xslope, Uslope = Uslope, Xs.slope = Xs.slope, Us.slope = Us.slope,
+                                       indices_beta_slope = indices_beta_slope, Time =Time,
+                                       st_calc = st_calc, B = B, Bs = Bs, wk = wk, Z = Z, P = P, left_trunc = left_trunc,
+                                       Z_CR = Z_CR, X_base = X_base, offset = offset, U = U, y.new.prog = y.new.prog, event1 = event1, event2 = event2, Ind = Ind,
+                                       Xs.0 = Xs.0, Us.0 = Us.0, Xs.slope.0 = Xs.slope.0, Us.slope.0 = Us.slope.0, P.0 = P.0, st.0 = st.0,Bs.0 = Bs.0,
+                                       B.CR = B.CR, Bs.CR = Bs.CR, Bs.0.CR = Bs.0.CR,
+                                       
+                                       nb.e.a.sigma = nb.e.a.sigma, nb.omega = nb.omega, Otime = Otime, Wtime = Wtime,
+                                       Os = Os, Ws = Ws, O_base = O_base, W_base=W_base, correlated_re = correlated_re,
+                                       Os.0 = Os.0, Ws.0 = Ws.0),silent=TRUE)
+    if(nproc >1){
+      parallel::stopCluster(clustpar)
+    }
+    
+    H <- matrix(0, length(binit_estim2[1:(length(binit_estim2)-nb.chol)]), length(binit_estim2[1:(length(binit_estim2)-nb.chol)]))
+    H[upper.tri(H, diag = TRUE)] <- try(derivees$v[1:(length(binit_estim2[1:(length(binit_estim2)-nb.chol)]) * (length(binit_estim2[1:(length(binit_estim2)-nb.chol)]) + 1) / 2)],silent=TRUE)
+    H <- try(t(H),silent=TRUE)
+    H[upper.tri(H, diag = TRUE)] <- try(derivees$v[1:(length(binit_estim2[1:(length(binit_estim2)-nb.chol)]) * (length(binit_estim2[1:(length(binit_estim2)-nb.chol)]) + 1) / 2)],silent=TRUE)
+    Vprm.2bis <- NULL
+    SEprm.2bis <- NULL
+    Vprm.2bis <- try(solve(H), silent = TRUE)
+    SEprm.2bis <- try(sqrt(diag(Vprm.2bis)), silent = TRUE)
+    derivees2bis <- derivees
+    mean4bis <- binit_estim2[1:(length(binit_estim2)-nb.chol)]
+    cost4bis <- proc.time() - ptm
   }
   else{
     estimation <- marqLevAlg(binit, fn = log_llh, minimize = FALSE,
@@ -1065,7 +1274,13 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                        variance = Vprm.1,
                        sd = SEprm.1,
                        result_step2 = derivees1,
-                       time.deriva = difftime(t.deriva1.start, t.deriva1.end))
+                       time.deriva = cost2)
+  ## Results for the second step bis
+  result_step2Partial <- list(estimation = mean2bis,
+                       variance = Vprm.1bis,
+                       sd = SEprm.1bis,
+                       result_step2 = derivees1bis,
+                       time.deriva = cost2bis)
   ## Results for the third step
   var_trans <- matrix(rep(0,length(estimation3$b)**2),nrow=length(estimation3$b),ncol=length(estimation3$b))
   var_trans[upper.tri(var_trans, diag=T)] <- estimation3$v
@@ -1083,7 +1298,13 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
                        variance = Vprm.2,
                        sd = SEprm.2,
                        result_step4 = derivees2,
-                       time.deriva = difftime(t.deriva2.start, t.deriva2.end))
+                       time.deriva = cost4)
+  ## Results for the thourth step bis
+  result_step4Partial <- list(estimation = mean4bis,
+                       variance = Vprm.2bis,
+                       sd = SEprm.2bis,
+                       result_step4 = derivees2bis,
+                       time.deriva = cost4bis)
   
   time.prog2 <- Sys.time()
   time.prog.fin <- difftime(time.prog2, time.prog1)
@@ -1091,8 +1312,10 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   
   final_object <- list( result_step1 = result_step1,
                         result_step2 = result_step2,
+                        result_step2Partial = result_step2Partial,
                         result_step3 = result_step3,
                         result_step4 = result_step4,
+                        result_step4Partial = result_step4Partial,
                         table.res = table.res,
                         time.compute = time.prog.fin,
                         control = list( formFixed = formFixed,
