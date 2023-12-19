@@ -261,7 +261,7 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
       MatCovSig <- as.matrix(C3)
       b_al <- Zq[,1:nb.e.a]%*%t(MatCovb)
       b_al <- matrix(b_al, ncol = nb.e.a)
-      b_om <- Zq[,1:nb.e.a.sigma]%*%t(MatCovSig)
+      b_om <- Zq[,(nb.e.a+1):(nb.e.a+nb.e.a.sigma)]%*%t(MatCovSig)
       b_om <- matrix(b_om, ncol = nb.e.a.sigma)
     }
   }
