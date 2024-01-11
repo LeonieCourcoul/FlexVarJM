@@ -1141,17 +1141,17 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       cov.cholesky <- trig.cov
       Cov.delta <- matrix(NA, ncol = ncol(cov.cholesky), nrow = ncol(cov.cholesky))
       
-      for(i in 1:ncol(C1)){
-        for(j in i:ncol(C1)){
+      for(i in 1:ncol(C3)){
+        for(j in i:ncol(C3)){
           resultat <- 0
           k <- i
           m <- j
           for(t in 1:min(i,j,ncol(Cov.delta))){
             for(s in 1:min(k,m,ncol(Cov.delta))){
-              resultat <- resultat + C1[j,t]*C1[m,s]*cov.cholesky[i+t-1,k+s-1] +
-                C1[j,t]*C1[k,s]*cov.cholesky[i+t-1,m+s-1] +
-                C1[i,t]*C1[m,s]*cov.cholesky[j+t-1,k+s-1] +
-                C1[i,t]*C1[k,s]*cov.cholesky[j+t-1,m+s-1] 
+              resultat <- resultat + C3[j,t]*C3[m,s]*cov.cholesky[i+t-1,k+s-1] +
+                C3[j,t]*C3[k,s]*cov.cholesky[i+t-1,m+s-1] +
+                C3[i,t]*C3[m,s]*cov.cholesky[j+t-1,k+s-1] +
+                C3[i,t]*C3[k,s]*cov.cholesky[j+t-1,m+s-1] 
               
             }
           }
