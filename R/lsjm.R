@@ -715,9 +715,9 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     if(variability_hetero){
       if(correlated_re){
         binit <- c(binit,
-                   cholesky_b,
-                   rep(0, nb.e.a*nb.e.a.sigma),
-                   rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma))
+                   cholesky_b[1],
+                   rep(0.1, length(cholesky_b)-1+nb.e.a*nb.e.a.sigma+choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma)
+                   )
         for(i in 1:length(c(cholesky_b,
                             rep(0, nb.e.a*nb.e.a.sigma),
                             rep(0, choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma)))){
