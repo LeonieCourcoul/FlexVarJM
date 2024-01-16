@@ -1078,6 +1078,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       cov.cholesky <- trig.cov
       Cov.delta <- matrix(NA, ncol = ncol(cov.cholesky), nrow = ncol(cov.cholesky))
       
+      element.chol <- estimation2$b[curseur:length(estimation2$b)]
       for(i in 1:ncol(C1)){
         for(j in i:ncol(C1)){
           resultat <- 0
@@ -1085,10 +1086,16 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
           m <- j
           for(t in 1:min(i,j,ncol(Cov.delta))){
             for(s in 1:min(k,m,ncol(Cov.delta))){
-              resultat <- resultat + C1[j,t]*C1[m,s]*cov.cholesky[i+t-1,k+s-1] +
-                C1[j,t]*C1[k,s]*cov.cholesky[i+t-1,m+s-1] +
-                C1[i,t]*C1[m,s]*cov.cholesky[j+t-1,k+s-1] +
-                C1[i,t]*C1[k,s]*cov.cholesky[j+t-1,m+s-1] 
+              l_jt <- C1[j,t]; l_ms <- C1[m,s]; l_ks <- C1[k,s]; l_it <- C1[i,t]
+              index_l_it <- element.chol[which(element.chol == l_it)]
+              index_l_jt <- element.chol[which(element.chol == l_jt)]
+              index_l_ms <- element.chol[which(element.chol == l_ms)]
+              index_l_ks <- element.chol[which(element.chol == l_ks)]
+              resultat <- resultat + l_jt*l_ms*cov.cholesky[index_l_it,index_l_ks] +
+                l_jt*l_ks*cov.cholesky[index_l_it,index_l_ms] +
+                l_it*l_ms*cov.cholesky[index_l_jt,index_l_ks] +
+                l_it*l_ks*cov.cholesky[index_l_jt,index_l_ms] 
+              
               
             }
           }
@@ -1118,6 +1125,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       cov.cholesky <- trig.cov
       Cov.delta <- matrix(NA, ncol = ncol(cov.cholesky), nrow = ncol(cov.cholesky))
       
+      element.chol <- estimation2$b[curseur:length(estimation2$b)]
       for(i in 1:ncol(C1)){
         for(j in i:ncol(C1)){
           resultat <- 0
@@ -1125,10 +1133,16 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
           m <- j
           for(t in 1:min(i,j,ncol(Cov.delta))){
             for(s in 1:min(k,m,ncol(Cov.delta))){
-              resultat <- resultat + C1[j,t]*C1[m,s]*cov.cholesky[i+t-1,k+s-1] +
-                C1[j,t]*C1[k,s]*cov.cholesky[i+t-1,m+s-1] +
-                C1[i,t]*C1[m,s]*cov.cholesky[j+t-1,k+s-1] +
-                C1[i,t]*C1[k,s]*cov.cholesky[j+t-1,m+s-1] 
+              l_jt <- C1[j,t]; l_ms <- C1[m,s]; l_ks <- C1[k,s]; l_it <- C1[i,t]
+              index_l_it <- element.chol[which(element.chol == l_it)]
+              index_l_jt <- element.chol[which(element.chol == l_jt)]
+              index_l_ms <- element.chol[which(element.chol == l_ms)]
+              index_l_ks <- element.chol[which(element.chol == l_ks)]
+              resultat <- resultat + l_jt*l_ms*cov.cholesky[index_l_it,index_l_ks] +
+                l_jt*l_ks*cov.cholesky[index_l_it,index_l_ms] +
+                l_it*l_ms*cov.cholesky[index_l_jt,index_l_ks] +
+                l_it*l_ks*cov.cholesky[index_l_jt,index_l_ms] 
+              
               
             }
           }
@@ -1141,17 +1155,23 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       cov.cholesky <- trig.cov
       Cov.delta <- matrix(NA, ncol = ncol(cov.cholesky), nrow = ncol(cov.cholesky))
       
-      for(i in 1:ncol(C3)){
-        for(j in i:ncol(C3)){
+      element.chol <- estimation2$b[(borne1+1):borne3]
+      for(i in 1:ncol(C1)){
+        for(j in i:ncol(C1)){
           resultat <- 0
           k <- i
           m <- j
           for(t in 1:min(i,j,ncol(Cov.delta))){
             for(s in 1:min(k,m,ncol(Cov.delta))){
-              resultat <- resultat + C3[j,t]*C3[m,s]*cov.cholesky[i+t-1,k+s-1] +
-                C3[j,t]*C3[k,s]*cov.cholesky[i+t-1,m+s-1] +
-                C3[i,t]*C3[m,s]*cov.cholesky[j+t-1,k+s-1] +
-                C3[i,t]*C3[k,s]*cov.cholesky[j+t-1,m+s-1] 
+              l_jt <- C3[j,t]; l_ms <- C3[m,s]; l_ks <- C3[k,s]; l_it <- C3[i,t]
+              index_l_it <- element.chol[which(element.chol == l_it)]
+              index_l_jt <- element.chol[which(element.chol == l_jt)]
+              index_l_ms <- element.chol[which(element.chol == l_ms)]
+              index_l_ks <- element.chol[which(element.chol == l_ks)]
+              resultat <- resultat + l_jt*l_ms*cov.cholesky[index_l_it,index_l_ks] +
+                l_jt*l_ks*cov.cholesky[index_l_it,index_l_ms] +
+                l_it*l_ms*cov.cholesky[index_l_jt,index_l_ks] +
+                l_it*l_ks*cov.cholesky[index_l_jt,index_l_ms] 
               
             }
           }
@@ -1176,7 +1196,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     diag(trig.cov) <- diag(trig.cov)/2
     cov.cholesky <- trig.cov
     Cov.delta <- matrix(NA, ncol = ncol(cov.cholesky), nrow = ncol(cov.cholesky))
-    
+    element.chol <- estimation2$b[curseur:length(estimation2$b)]
     for(i in 1:ncol(C1)){
       for(j in i:ncol(C1)){
         resultat <- 0
@@ -1184,10 +1204,15 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
         m <- j
         for(t in 1:min(i,j,ncol(Cov.delta))){
           for(s in 1:min(k,m,ncol(Cov.delta))){
-            resultat <- resultat + C1[j,t]*C1[m,s]*cov.cholesky[i+t-1,k+s-1] +
-              C1[j,t]*C1[k,s]*cov.cholesky[i+t-1,m+s-1] +
-              C1[i,t]*C1[m,s]*cov.cholesky[j+t-1,k+s-1] +
-              C1[i,t]*C1[k,s]*cov.cholesky[j+t-1,m+s-1] 
+            l_jt <- C1[j,t]; l_ms <- C1[m,s]; l_ks <- C1[k,s]; l_it <- C1[i,t]
+            index_l_it <- element.chol[which(element.chol == l_it)]
+            index_l_jt <- element.chol[which(element.chol == l_jt)]
+            index_l_ms <- element.chol[which(element.chol == l_ms)]
+            index_l_ks <- element.chol[which(element.chol == l_ks)]
+            resultat <- resultat + l_jt*l_ms*cov.cholesky[index_l_it,index_l_ks] +
+              l_jt*l_ks*cov.cholesky[index_l_it,index_l_ms] +
+              l_it*l_ms*cov.cholesky[index_l_jt,index_l_ks] +
+              l_it*l_ks*cov.cholesky[index_l_jt,index_l_ms] 
             
           }
         }
