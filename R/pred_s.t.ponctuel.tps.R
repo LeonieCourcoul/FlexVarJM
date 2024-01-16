@@ -38,10 +38,9 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
     ################
     ###Parameters###
     ################
-    
-    param <- object$table.res$Estimation
-    #Manage parameters
     curseur <- 1
+    param <- object$result_step2$result_step2$b
+    #Manage parameters
     #Evenement 1 :
     ## Risque de base :
     if(object$control$hazard_baseline == "Weibull"){
@@ -190,49 +189,46 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
     }
     ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
     if(object$control$variability_hetero){
+      Zq <- randtoolbox::sobol(object$control$S2, object$control$nb.e.a+object$control$nb.e.a.sigma, normal = TRUE, scrambling = 1)
+    }else{
+      Zq <- randtoolbox::sobol(object$control$S2, object$control$nb.e.a, normal = TRUE, scrambling = 1)
+    }
+    if(object$control$variability_hetero){
       if(object$control$correlated_re){
-        borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
-        C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
-        C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
-        C2 <- matrix(param[(borne1+1):(borne1+object$control$nb.e.a.sigma*object$control$nb.e.a)],nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a, byrow = TRUE)
-        borne2 <- borne1+object$control$nb.e.a.sigma*object$control$nb.e.a + 1
-        borne3 <- borne2 + choose(n = object$control$nb.e.a.sigma, k = 2) + object$control$nb.e.a.sigma - 1
-        C3 <- matrix(rep(0,(object$control$nb.e.a.sigma)**2),nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a.sigma)
-        C3[lower.tri(C3, diag=T)] <- param[borne2:borne3]
-        C4 <- matrix(rep(0,object$control$nb.e.a*object$control$nb.e.a.sigma),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a.sigma)
-        MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
+        C1 <- matrix(rep(0,(object$control$nb.e.a+object$control$nb.e.a.sigma)**2),nrow=object$control$nb.e.a+object$control$nb.e.a.sigma,ncol=object$control$nb.e.a+object$control$nb.e.a.sigma)
+        C1[lower.tri(C1, diag=T)] <- param[curseur:length(param)]
+        MatCov <- C1
         MatCov <- as.matrix(MatCov)
+        random.effects <- Zq%*%t(MatCov)
+        b_al <- random.effects[,1:object$control$nb.e.a]
+        b_al <- matrix(b_al, ncol = object$control$nb.e.a)
+        b_om <- random.effects[,(object$control$nb.e.a+1):(object$control$nb.e.a+object$control$nb.e.a.sigma)]
+        b_om <- matrix(b_om, ncol = object$control$nb.e.a.sigma)
       }
       else{
         borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
-        C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
+        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
         C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
         borne3 <- borne1 + choose(n = object$control$nb.e.a.sigma, k = 2) + object$control$nb.e.a.sigma
         C3 <- matrix(rep(0,(object$control$nb.e.a.sigma)**2),nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a.sigma)
         C3[lower.tri(C3, diag=T)] <- param[(borne1+1):borne3]
-        C4 <- matrix(rep(0,object$control$nb.e.a*object$control$nb.e.a.sigma),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a.sigma)
-        C2.bis <- matrix(rep(0,object$control$nb.e.a*object$control$nb.e.a.sigma),nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a)
-        MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
-        MatCov <- as.matrix(MatCov)
+        MatCovb <- as.matrix(C1)
+        MatCovSig <- as.matrix(C3)
+        b_al <- Zq[,1:object$control$nb.e.a]%*%t(MatCovb)
+        b_al <- matrix(b_al, ncol = object$control$nb.e.a)
+        b_om <- Zq[,(object$control$nb.e.a+1):(object$control$nb.e.a+object$control$nb.e.a.sigma)]%*%t(MatCovSig)
+        b_om <- matrix(b_om, ncol = object$control$nb.e.a.sigma)
       }
     }
     else{
       borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
       C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
       C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
-      MatCov <- C1
+      MatCov <- as.matrix(C1)
+      b_al <- Zq%*%t(MatCov)
+      b_al <- matrix(b_al, ncol = object$control$nb.e.a)
     }
-    
-    if(object$control$variability_hetero){
-      Zq <- randtoolbox::sobol(object$control$S2, object$control$nb.e.a+object$control$nb.e.a.sigma, normal = TRUE, scrambling = 1)
-    }else{
-      Zq <- randtoolbox::sobol(object$control$S2, object$control$nb.e.a, normal = TRUE, scrambling = 1)
-    }
-    random.effects <- Zq%*%t(MatCov)
-    b_al <- random.effects[,1:object$control$nb.e.a]
-    if(object$control$variability_hetero){
-      b_om <- random.effects[,(object$control$nb.e.a+1):(object$control$nb.e.a+object$control$nb.e.a.sigma)]
-    }
+
     
     #####################
     # Longitudinal part #
@@ -600,7 +596,7 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
         Gamma2 <- cbind(Gamma2,(t2/2)*rowSums(h.2.2))
       }
     }
-    
+    browser()
     if(object$control$competing_risk){
       int <- exp(-Gamma1-Gamma2)*h
     }
@@ -785,11 +781,12 @@ pred_s.t.ponctuel.tps <- function(newdata,object, s, window, event = 1){
     else{
       denominateur <- exp(Surv)*f_Y_b_sigma
     }
-    
+
     denominateur <- mean(denominateur)
     #print(denominateur)
     pred.current <- numerateur/denominateur
     table.predyn.ponct <- rbind(table.predyn.ponct,pred.current)
+    print(table.predyn.ponct)
     #print(pred.current)
     #pred.current
   }
