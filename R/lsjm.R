@@ -586,7 +586,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   }
   
   #browser()
-  
+ # browser()
   binit_user <- NULL
   if(!is.null(binit)){
     binit_user <- binit
@@ -887,6 +887,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   param_est <-  estimation$b
 
   #Delta-method
+  if(1==2){
   if(variability_hetero){
     if(correlated_re){
       curseur <- length(estimation$b) - nb.chol + 1
@@ -1040,6 +1041,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
         sd.param <- c(sd.param,sqrt(resultat))
       }
     }
+  }
   }
   
   
