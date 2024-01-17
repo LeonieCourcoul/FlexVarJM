@@ -208,7 +208,7 @@ pred_s.t.ponctuel.tps.2 <- function(newdata,object, s, window, event = 1){
       }
       else{
         borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
-        C1 <- matrix(rep(0,(nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
+        C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
         C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
         borne3 <- borne1 + choose(n = object$control$nb.e.a.sigma, k = 2) + object$control$nb.e.a.sigma
         C3 <- matrix(rep(0,(object$control$nb.e.a.sigma)**2),nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a.sigma)
@@ -567,6 +567,7 @@ pred_s.t.ponctuel.tps.2 <- function(newdata,object, s, window, event = 1){
     for(nb.col in 1:object$control$nb_pointsGK){
       A1_0_u_red <- cbind(A1_0_u_red, rowSums(A1_0_u[,(object$control$nb_pointsGK*(nb.col-1)+1):(object$control$nb_pointsGK*nb.col)]))
     }
+    A1_0_u_red <- 0.5*A1_0_u_red
     
     if(object$control$competing_risk){
       etaBaseline_0_s.CR <- etaBaseline_0_s.CR + pred_surv_CR
@@ -581,6 +582,7 @@ pred_s.t.ponctuel.tps.2 <- function(newdata,object, s, window, event = 1){
       for(nb.col in 1:object$control$nb_pointsGK){
         A1_0_u_red.CR <- cbind(A1_0_u_red.CR, rowSums(A1_0_u.CR[,(object$control$nb_pointsGK*(nb.col-1)+1):(object$control$nb_pointsGK*nb.col)]))
       }
+      A1_0_u_red.CR <- 0.5*A1_0_u_red.CR
     }
     if(object$control$competing_risk){
       Surv.den <- exp(-A1_0_s-A1_0_s.CR)
@@ -588,7 +590,7 @@ pred_s.t.ponctuel.tps.2 <- function(newdata,object, s, window, event = 1){
     }
     else{
       Surv.den <- exp(-A1_0_s)
-      Surv.num <- rowSums(h*exp(-A1_0_u_red))
+      Surv.num <- P.1*rowSums(h*exp(-A1_0_u_red))
     }
     
     numerateur <- Surv.num*f_Y_b_sigma

@@ -1061,6 +1061,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   sd.param <- sqrt(diag(var_trans))
   param_est <-  estimation2$b
   
+  if(1==2){
   #Delta-method
   if(variability_hetero){
     if(correlated_re){
@@ -1220,6 +1221,8 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       }
     }
   }
+  }
+  
   
   table.res <- cbind(param_est, sd.param)
   table.res <- as.data.frame(table.res)

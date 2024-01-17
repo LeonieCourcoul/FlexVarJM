@@ -585,6 +585,7 @@ pred_s.t.bootstrap.tps.2 <- function(newdata,object, s, window, event = 1, nb.dr
       for(nb.col in 1:object$control$nb_pointsGK){
         A1_0_u_red <- cbind(A1_0_u_red, rowSums(A1_0_u[,(object$control$nb_pointsGK*(nb.col-1)+1):(object$control$nb_pointsGK*nb.col)]))
       }
+      A1_0_u_red <- 0.5*A1_0_u_red
       
       if(object$control$competing_risk){
         etaBaseline_0_s.CR <- etaBaseline_0_s.CR + pred_surv_CR
@@ -599,6 +600,7 @@ pred_s.t.bootstrap.tps.2 <- function(newdata,object, s, window, event = 1, nb.dr
         for(nb.col in 1:object$control$nb_pointsGK){
           A1_0_u_red.CR <- cbind(A1_0_u_red.CR, rowSums(A1_0_u.CR[,(object$control$nb_pointsGK*(nb.col-1)+1):(object$control$nb_pointsGK*nb.col)]))
         }
+        A1_0_u_red.CR <- 0.5*A1_0_u_red.CR
       }
       if(object$control$competing_risk){
         Surv.den <- exp(-A1_0_s-A1_0_s.CR)
