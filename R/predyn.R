@@ -55,7 +55,7 @@
 predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500, graph = FALSE){
   if(!inherits(object, "lsjm")) stop("use only \"lsjm\" objects")
   #if(object$result$istop != 1) stop("The estimation didn't reach convergence \n")
-  if(IC<=0 || IC>=100) stop("IC must be between 0 and 100")
+  if(!is.null(IC) && (IC<=0 || IC>=100)) stop("IC must be between 0 and 100")
   if(!is.null(IC) && (is.null(nb.draws) || nb.draws <=0)) stop("draw must be higher 1")
   bootstrap <- c()
   pred.ponct <- c()
@@ -121,7 +121,7 @@ predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500
       bootstrap <- c()
       pred.ponct <- c()
       for(t in window){
-        pred.t <- pred_s.t.ponctuel.tps(newdata.id,object,s,t,event)
+        pred.t <- pred_s.t.ponctuel.tps.2(newdata.id,object,s,t,event)
         pred.ponct <- c(pred.ponct, pred.t)
       }
       table.pred.id <- cbind(i, times, pred.ponct
