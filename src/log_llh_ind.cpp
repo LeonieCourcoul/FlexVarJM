@@ -214,7 +214,6 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
     if(left_trunc){
       etaBaseline_0_CR = etaBaseline_0_CR + predsurv_CR;
     }
-    
     //###GK integration
     survLong_CR = exp(survLong_CR);
     survLong_CR = survLong_CR*h_0_GK_CR;
@@ -227,32 +226,64 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
   }
   // Longitudinal part
   arma::vec f_Y_b_sigma(S,fill::zeros);
-  arma::vec sigma_long;
-  if(n_row_X == 0){
-    if(variability_hetero){
+  if(variability_hetero){
+    arma::vec sigma_long;
+    if(n_row_X == 0){
       sigma_long = exp(dot(omega,O_base_i) + b_om*W_base_i );
+      CV  = dot(beta,X_base_i) + b_al*U_i ;
+      f_Y_b_sigma = log(1.0 / (sqrt(2.0*M_PI)*sigma_long)) - 0.5*pow((y_i-CV)/sigma_long,2);
     }
     else{
-      sigma_long = sigma_epsilon;
+      for(int k=0; k<n_row_X; k++){
+        sigma_long = exp(dot(omega,O_base_i.row(k)) + b_om*W_base_i.row(k).t());
+        CV = dot(beta,X_base_i.row(k)) + b_al*U_i.row(k).t(); 
+        f_Y_b_sigma = f_Y_b_sigma + log(1.0 / (sqrt(2.0*M_PI)*sigma_long)) - 0.5*pow((y_i(k)-CV)/sigma_long,2);
+      }
     }
-    CV  = dot(beta,X_base_i) + b_al*U_i ;
-    f_Y_b_sigma = log(1.0 / (sqrt(2.0*M_PI)*sigma_long)) - 0.5*pow((y_i-CV)/sigma_long,2);
   }
   else{
-    for(int k=0; k<n_row_X; k++){
-      if(variability_hetero){
-        
-        sigma_long = exp(dot(omega,O_base_i.row(k)) + b_om*W_base_i.row(k).t());
-        
-      }
-      else{
-        sigma_long = sigma_epsilon;
-      }
-      CV = dot(beta,X_base_i.row(k)) + b_al*U_i.row(k).t(); 
-      f_Y_b_sigma = f_Y_b_sigma + log(1.0 / (sqrt(2.0*M_PI)*sigma_long)) - 0.5*pow((y_i(k)-CV)/sigma_long,2);
-     // Rcout << "The value of v : \n" << f_Y_b_sigma << "\n";
+    int sigma_long;
+    sigma_long = sigma_epsilon;
+    if(n_row_X == 0){
+      CV  = dot(beta,X_base_i) + b_al*U_i ;
+      f_Y_b_sigma = log(1.0 / (sqrt(2.0*M_PI)*sigma_long)) - 0.5*pow((y_i-CV)/sigma_long,2);
     }
+    else{
+      for(int k=0; k<n_row_X; k++){
+        CV = dot(beta,X_base_i.row(k)) + b_al*U_i.row(k).t(); 
+        f_Y_b_sigma = f_Y_b_sigma + log(1.0 / (sqrt(2.0*M_PI)*sigma_long)) - 0.5*pow((y_i(k)-CV)/sigma_long,2);
+      }
+      
+    }
+    
   }
+  
+//  if(n_row_X == 0){
+//    if(variability_hetero){
+//      sigma_long = exp(dot(omega,O_base_i) + b_om*W_base_i );
+//    }
+//    else{
+//      sigma_long = sigma_epsilon;
+//    }
+//    CV  = dot(beta,X_base_i) + b_al*U_i ;
+//    f_Y_b_sigma = log(1.0 / (sqrt(2.0*M_PI)*sigma_long)) - 0.5*pow((y_i-CV)/sigma_long,2);
+//  }
+//  else{
+//    for(int k=0; k<n_row_X; k++){
+//      if(variability_hetero){
+//        
+//        sigma_long = exp(dot(omega,O_base_i.row(k)) + b_om*W_base_i.row(k).t());
+//        
+//      }
+//      else{
+//        sigma_long = sigma_epsilon;
+//        
+//      }
+//      CV = dot(beta,X_base_i.row(k)) + b_al*U_i.row(k).t(); 
+//      f_Y_b_sigma = f_Y_b_sigma + log(1.0 / (sqrt(2.0*M_PI)*sigma_long)) - 0.5*pow((y_i(k)-CV)/sigma_long,2);
+//     // Rcout << "The value of v : \n" << f_Y_b_sigma << "\n";
+//    }
+//  }
   arma::vec log_dens_int;
   double Clogexp;
   double log_dens;
