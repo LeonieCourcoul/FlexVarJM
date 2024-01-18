@@ -53,7 +53,7 @@
 goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
   x <- object
   if(!inherits(x, "lsjm")) stop("use only \"lsjm\" objects")
-  if(x$result$istop != 1) stop("The estimation didn't reach convergence \n")
+  #if(x$result$istop != 1) stop("The estimation didn't reach convergence \n")
   message("Computation of predictions")
   Xtime <- NULL
   Utime <- NULL
@@ -302,12 +302,15 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
     Os <- list.data.GK.current.sigma$Xtime
     Ws <- list.data.GK.current.sigma$Utime
   }
-  #Manage parameters
-  estim_param <- x$table.res$Estimation
+  ################
+  ###Parameters###
+  ################
   curseur <- 1
+  param <- object$result_step2$result_step2$b
+  #Manage parameters
   #Evenement 1 :
   ## Risque de base :
-  if(x$control$hazard_baseline == "Weibull"){
+  if(object$control$hazard_baseline == "Weibull"){
     #if(scaleWeibull == "square"){
     #  alpha_weib <- param[curseur]**2
     #  curseur <- curseur + 1
@@ -320,38 +323,59 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
     #  shape <- exp(param[curseur])
     #  curseur <- curseur + 1
     #}
-    shape <- estim_param[curseur]**2
+    shape <- param[curseur]**2
     curseur <- curseur + 1
   }
-  if(x$control$hazard_baseline == "Splines"){
-    gamma <- estim_param[(curseur):(curseur+x$control$ord.splines+1)]
-    curseur <- curseur + x$control$ord.splines + 2
+  if(object$control$hazard_baseline == "Splines"){
+    gamma <- param[(curseur):(curseur+object$control$ord.splines+1)]
+    curseur <- curseur + object$control$ord.splines + 2
   }
   ## Covariables :
-  if(x$control$nb.alpha >=1){
-    alpha <- estim_param[(curseur):(curseur+x$control$nb.alpha-1)]
-    curseur <- curseur+x$control$nb.alpha
+  if(object$control$nb.alpha >=1){
+    alpha <- param[(curseur):(curseur+object$control$nb.alpha-1)]
+    curseur <- curseur+object$control$nb.alpha
   }
   ## Association :
-  if(c("random effects") %in% x$control$sharedtype){
-    stop("Not implemented yet")
-  }
-  if(c("current value") %in% x$control$sharedtype){
-    alpha.current <- estim_param[curseur]
+  if("current value" %in% object$control$sharedtype){
+    alpha.current <- param[curseur]
     curseur <- curseur + 1
   }
-  if(c("slope") %in% x$control$sharedtype){
-    alpha.slope <- estim_param[curseur]
+  else{
+    alpha.current <- 0
+  }
+  if("slope" %in% object$control$sharedtype){
+    alpha.slope <- param[curseur]
     curseur <- curseur + 1
   }
-  if(c("variability") %in% x$control$sharedtype){
-    alpha.sigma <- estim_param[curseur]
+  else{
+    alpha.slope <- 0
+  }
+  if("variability" %in% object$control$sharedtype){
+    alpha.sigma <- param[curseur]
     curseur <- curseur + 1
   }
+  else{
+    alpha.sigma <- 0
+  }
+  #if(sharedtype %in% c("RE")){
+  #  stop("Not implemented yet")
+  #}
+  #if(sharedtype %in% c("CV","CVS")){
+  #  alpha.current <- param[curseur]
+  #  curseur <- curseur + 1
+  #}
+  #if(sharedtype %in%  c("CVS","S")){
+  #  alpha.slope <- param[curseur]
+  #  curseur <- curseur + 1
+  #}
+  #if(variability_hetero){
+  #  alpha.sigma <- param[curseur]
+  #  curseur <- curseur + 1
+  #}
   # Evenement 2
-  if(x$control$competing_risk){
+  if(object$control$competing_risk){
     ## Risque de base :
-    if(x$control$hazard_baseline_CR == "Weibull"){
+    if(object$control$hazard_baseline_CR == "Weibull"){
       #if(scaleWeibull == "square"){
       #  alpha_weib.CR <- param[curseur]**2
       #  curseur <- curseur + 1
@@ -364,83 +388,101 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
       #  shape.CR <- exp(param[curseur])
       #  curseur <- curseur + 1
       #}
-      shape.CR <- estim_param[curseur]**2
+      shape.CR <- param[curseur]**2
       curseur <- curseur + 1
     }
-    if(x$control$hazard_baseline_CR == "Splines"){
-      gamma.CR <- estim_param[(curseur):(curseur+x$control$ord.splines+1)]
-      curseur <- curseur + x$control$ord.splines + 2
+    if(object$control$hazard_baseline_CR == "Splines"){
+      gamma.CR <- param[(curseur):(curseur+object$control$ord.splines+1)]
+      curseur <- curseur + object$control$ord.splines + 2
     }
     ## Covariables :
-    if(x$control$nb.alpha.CR >=1){
-      alpha.CR <- estim_param[(curseur):(curseur+x$control$nb.alpha.CR-1)]
-      curseur <- curseur+x$control$nb.alpha.CR
+    if(object$control$nb.alpha.CR >=1){
+      alpha.CR <- param[(curseur):(curseur+object$control$nb.alpha.CR-1)]
+      curseur <- curseur+object$control$nb.alpha.CR
     }
     ## Association :
-    if(c("random effects") %in% x$control$sharedtype_CR){
-      stop("Not implemented yet")
-    }
-    if(c("current value") %in% x$control$sharedtype_CR){
-      alpha.current.CR <- estim_param[curseur]
+    if("current value" %in% object$control$sharedtype_CR){
+      alpha.current.CR <- param[curseur]
       curseur <- curseur + 1
     }
-    if(c("slope") %in% x$control$sharedtype_CR){
-      alpha.slope.CR <- estim_param[curseur]
+    else{
+      alpha.current.CR <- 0
+    }
+    if("slope" %in% object$control$sharedtype_CR){
+      alpha.slope.CR <- param[curseur]
       curseur <- curseur + 1
     }
-    if(c("variability") %in% x$control$sharedtype_CR){
-      alpha.sigma.CR <- estim_param[curseur]
+    else{
+      alpha.slope <- 0
+    }
+    if("variability" %in% object$control$sharedtype_CR){
+      alpha.sigma.CR <- param[curseur]
       curseur <- curseur + 1
     }
+    else{
+      alpha.sigma.CR <- 0
+    }
+    #if(sharedtype_CR %in% c("RE")){
+    #  stop("Not implemented yet")
+    #}
+    #if(sharedtype_CR %in% c("CV","CVS")){
+    #  alpha.current.CR <- param[curseur]
+    #  curseur <- curseur + 1
+    #}
+    #if(sharedtype_CR %in%  c("CVS","S")){
+    #  alpha.slope.CR <- param[curseur]
+    #  curseur <- curseur + 1
+    #}
+    #if(variability_hetero){
+    #  alpha.sigma.CR <- param[curseur]
+    #  curseur <- curseur + 1
+    #}
   }
   # Marqueur :
   ## Effets fixes trend :
-  beta <- estim_param[curseur:(curseur+x$control$nb.priorMean.beta-1)]
-  curseur <- curseur+x$control$nb.priorMean.beta
+  beta <- param[curseur:(curseur+object$control$nb.priorMean.beta-1)]
+  if( "slope" %in% object$control$sharedtype || "slope" %in% object$control$sharedtype_CR){
+    beta_slope <- beta[object$control$indices_beta_slope]
+  }
+  curseur <- curseur+object$control$nb.priorMean.beta
   ## Effets fixes var :
-  if(x$control$variability_hetero){
-    omega <- estim_param[curseur:(curseur+nb.omega-1)]
-    curseur <- curseur + nb.omega
+  if(object$control$variability_hetero){
+    omega <- param[curseur:(curseur+object$control$nb.omega-1)]
+    curseur <- curseur + object$control$nb.omega
   }
   else{
-    sigma.epsilon <- estim_param[curseur]
+    sigma.epsilon <- param[curseur]
     curseur <- curseur + 1
   }
   ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
-  if(x$control$variability_hetero){
-    if(x$control$correlated_re){
-      borne1 <- curseur + choose(n = x$control$nb.e.a, k = 2) + x$control$nb.e.a - 1
-      C1 <- matrix(rep(0,(x$control$nb.e.a)**2),nrow=x$control$nb.e.a,ncol=x$control$nb.e.a)
-      C1[lower.tri(C1, diag=T)] <- estim_param[curseur:borne1]
-      C2 <- matrix(estim_param[(borne1+1):(borne1+nb.e.a.sigma*x$control$nb.e.a)],nrow=nb.e.a.sigma,ncol=x$control$nb.e.a, byrow = TRUE)
-      borne2 <- borne1+nb.e.a.sigma*x$control$nb.e.a + 1
-      borne3 <- borne2 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma - 1
-      C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
-      C3[lower.tri(C3, diag=T)] <- estim_param[borne2:borne3]
-      C4 <- matrix(rep(0,x$control$nb.e.a*nb.e.a.sigma),nrow=x$control$nb.e.a,ncol=nb.e.a.sigma)
-      MatCov <- rbind(cbind(C1,C4),cbind(C2,C3))
+  if(object$control$variability_hetero){
+    Zq <- randtoolbox::sobol(object$control$S2, object$control$nb.e.a+object$control$nb.e.a.sigma, normal = TRUE, scrambling = 1)
+  }else{
+    Zq <- randtoolbox::sobol(object$control$S2, object$control$nb.e.a, normal = TRUE, scrambling = 1)
+  }
+  if(object$control$variability_hetero){
+    if(object$control$correlated_re){
+      C1 <- matrix(rep(0,(object$control$nb.e.a+object$control$nb.e.a.sigma)**2),nrow=object$control$nb.e.a+object$control$nb.e.a.sigma,ncol=object$control$nb.e.a+object$control$nb.e.a.sigma)
+      C1[lower.tri(C1, diag=T)] <- param[curseur:length(param)]
+      MatCov <- C1
       MatCov <- as.matrix(MatCov)
-      diag(MatCov) <- abs(diag(MatCov))
     }
     else{
-      borne1 <- curseur + choose(n = x$control$nb.e.a, k = 2) + x$control$nb.e.a - 1
-      C1 <- matrix(rep(0,(x$control$nb.e.a)**2),nrow=x$control$nb.e.a,ncol=x$control$nb.e.a)
-      C1[lower.tri(C1, diag=T)] <- estim_param[curseur:borne1]
-      borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
-      C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
-      C3[lower.tri(C3, diag=T)] <- estim_param[(borne1+1):borne3]
-      C4 <- matrix(rep(0,x$control$nb.e.a*nb.e.a.sigma),nrow=x$control$nb.e.a,ncol=nb.e.a.sigma)
-      C2.bis <- matrix(rep(0,x$control$nb.e.a*nb.e.a.sigma),nrow=nb.e.a.sigma,ncol=x$control$nb.e.a)
-      MatCov <- rbind(cbind(C1,C4),cbind(C2.bis,C3))
-      MatCov <- as.matrix(MatCov)
-      diag(MatCov) <- abs(diag(MatCov))
+      borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
+      C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
+      C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
+      borne3 <- borne1 + choose(n = object$control$nb.e.a.sigma, k = 2) + object$control$nb.e.a.sigma
+      C3 <- matrix(rep(0,(object$control$nb.e.a.sigma)**2),nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a.sigma)
+      C3[lower.tri(C3, diag=T)] <- param[(borne1+1):borne3]
+      MatCovb <- as.matrix(C1)
+      MatCovSig <- as.matrix(C3)
     }
   }
   else{
-    borne1 <- curseur + choose(n = x$control$nb.e.a, k = 2) + x$control$nb.e.a - 1
-    C1 <- matrix(rep(0,(x$control$nb.e.a)**2),nrow=x$control$nb.e.a,ncol=x$control$nb.e.a)
-    C1[lower.tri(C1, diag=T)] <- estim_param[curseur:borne1]
-    MatCov <- C1
+    borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
+    C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
+    C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
+    MatCov <- as.matrix(C1)
   }
   Cum_risk2 <- c()
   Cum_risk1 <- c()
@@ -495,9 +537,18 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
     Os_i <- Os[(x$control$nb_pointsGK*(i-1)+1):(x$control$nb_pointsGK*i),]
     Ws_i <- Ws[(x$control$nb_pointsGK*(i-1)+1):(x$control$nb_pointsGK*i),]
     
-    Sigma.re <- MatCov%*%t(MatCov)
+    
     if(x$control$variability_hetero){
-      binit <- mvtnorm::rmvnorm(1, mean = rep(0, x$control$nb.e.a+nb.e.a.sigma), Sigma.re)
+      if(x$control$correlated){
+        Sigma.re <- MatCov%*%t(MatCov)
+        binit <- mvtnorm::rmvnorm(1, mean = rep(0, x$control$nb.e.a+x$control$nb.e.a.sigma), Sigma.re)
+      }
+      else{
+        Sigma.re.b <- MatCov%*%t(MatCov)
+        Sigma.re.tau <- MatCovSig%*%t(MatCovSig)
+        binit <- c(mvtnorm::rmvnorm(1, mean = rep(0, x$control$nb.e.a), Sigma.re.b),mvtnorm::rmvnorm(1, mean = rep(0, x$control$nb.e.a.sigma), Sigma.re.tau))
+      }
+      
     }
     else{
       binit <- mvtnorm::rmvnorm(1, mean = rep(0, x$control$nb.e.a), Sigma.re)
