@@ -242,7 +242,7 @@ double log_llh_ind(bool variability_hetero, arma::rowvec Otime_i, arma::vec Wtim
     }
   }
   else{
-    int sigma_long;
+    double sigma_long;
     sigma_long = sigma_epsilon;
     if(n_row_X == 0){
       CV  = dot(beta,X_base_i) + b_al*U_i ;

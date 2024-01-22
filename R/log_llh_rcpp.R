@@ -234,7 +234,7 @@ log_llh_rcpp <- function(param, nb.e.a, nb.priorMean.beta, nb.alpha, competing_r
     curseur <- curseur + nb.omega
   }
   else{
-    sigma.epsilon <- param[curseur]
+    sigma.epsilon <- abs(param[curseur])
     curseur <- curseur + 1
   }
   ## Matrice de variance-covariance de l'ensemble des effets aléatoires :
