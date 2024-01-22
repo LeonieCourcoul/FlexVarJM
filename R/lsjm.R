@@ -887,7 +887,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   param_est <-  estimation$b
 
   #Delta-method
-  if(1==2){
+  if(1==1){
   if(variability_hetero){
     if(correlated_re){
       curseur <- length(estimation$b) - nb.chol + 1
