@@ -887,13 +887,16 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
   param_est <-  estimation$b
 
   #Delta-method
-  if(1==1){
   if(variability_hetero){
     if(correlated_re){
       curseur <- length(estimation$b) - nb.chol + 1
       C1 <- matrix(rep(0,(nb.e.a+nb.e.a.sigma)**2),nrow=nb.e.a+nb.e.a.sigma,ncol=nb.e.a+nb.e.a.sigma)
       C1[lower.tri(C1, diag=T)] <- estimation$b[curseur:length(estimation$b)]
       C1 <- as.matrix(C1)
+      Index.C1 <- matrix(rep(0,(nb.e.a+nb.e.a.sigma)**2),nrow=nb.e.a+nb.e.a.sigma,ncol=nb.e.a+nb.e.a.sigma)
+      Index.C1[lower.tri(Index.C1, diag=T)] <- 1:(choose(nb.e.a+nb.e.a.sigma,2)+nb.e.a+nb.e.a.sigma)
+      Index.C1 <- as.matrix(Index.C1)
+      
       MatCov <- C1%*%t(C1)
       param_est <- c(param_est,unique(c(t(MatCov))))
       var_trans <- matrix(rep(0,length(estimation$b)**2),nrow=length(estimation$b),ncol=length(estimation$b))
@@ -903,27 +906,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       diag(trig.cov) <- diag(trig.cov)/2
       cov.cholesky <- trig.cov
       Cov.delta <- matrix(NA, ncol = ncol(cov.cholesky), nrow = ncol(cov.cholesky))
-      
-      #for(i in 1:ncol(C1)){
-      #  for(j in 1:ncol(C1)){
-      #    for(k in 1:ncol(C1)){
-      #      for(m in 1:ncol(C1)){
-      #        resultat <- 0
-      #        for(t in 1:min(i,j,ncol(Cov.delta))){
-      #          for(s in 1:min(k,m,ncol(Cov.delta))){
-      #            resultat <- resultat + C1[j,t]*C1[m,s]*cov.cholesky[i+t-1,k+s-1] +
-      #              C1[j,t]*C1[k,s]*cov.cholesky[i+t-1,m+s-1] +
-      #              C1[i,t]*C1[m,s]*cov.cholesky[j+t-1,k+s-1] +
-      #              C1[i,t]*C1[k,s]*cov.cholesky[j+t-1,m+s-1] 
-      #            
-      #          }
-      #        }
-      #        Cov.delta[i+j-1,k+m-1] <- resultat
-      #      }
-      #    }
-      #  }
-      #  
-      #}
+      element.chol <- estimation$b[curseur:length(estimation$b)]
       for(i in 1:ncol(C1)){
         for(j in i:ncol(C1)){
           resultat <- 0
@@ -931,17 +914,16 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
           m <- j
           for(t in 1:min(i,j,ncol(Cov.delta))){
             for(s in 1:min(k,m,ncol(Cov.delta))){
-              resultat <- resultat + C1[j,t]*C1[m,s]*cov.cholesky[i+t-1,k+s-1] +
-                C1[j,t]*C1[k,s]*cov.cholesky[i+t-1,m+s-1] +
-                C1[i,t]*C1[m,s]*cov.cholesky[j+t-1,k+s-1] +
-                C1[i,t]*C1[k,s]*cov.cholesky[j+t-1,m+s-1] 
-              
+              resultat <- resultat + 
+                C1[j,t]*C1[m,s]*cov.cholesky[Index.C1[i,t],Index.C1[k,s]] +
+                C1[j,t]*C1[k,s]*cov.cholesky[Index.C1[i,t],Index.C1[m,s]] +
+                C1[i,t]*C1[m,s]*cov.cholesky[Index.C1[j,t],Index.C1[k,s]] +
+                C1[i,t]*C1[k,s]*cov.cholesky[Index.C1[j,t],Index.C1[m,s]]
             }
           }
           sd.param <- c(sd.param,sqrt(resultat))
         }
       }
-      
     }
     else{
       
@@ -950,10 +932,18 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
       C1[lower.tri(C1, diag=T)] <- estimation$b[curseur:borne1]
       C1 <- as.matrix(C1)
+      Index.C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+      Index.C1[lower.tri(Index.C1, diag=T)] <- 1:(choose(nb.e.a,2)+nb.e.a)
+      Index.C1 <- as.matrix(Index.C1)
       borne3 <- borne1 + choose(n = nb.e.a.sigma, k = 2) + nb.e.a.sigma
       C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
       C3[lower.tri(C3, diag=T)] <- estimation$b[(borne1+1):borne3]
       C3 <- as.matrix(C3)
+      
+      Index.C3 <- matrix(rep(0,(nb.e.a.sigma)**2),nrow=nb.e.a.sigma,ncol=nb.e.a.sigma)
+      Index.C3[lower.tri(Index.C3, diag=T)] <- 1:(choose(nb.e.a.sigma,2)+nb.e.a.sigma)
+      Index.C3 <- as.matrix(Index.C3)
+      
       MatCovb <- C1%*%t(C1)
       MatCovSig <- C3%*%t(C3)
       param_est <- c(param_est,unique(c(t(MatCovb))),unique(c(t(MatCovSig))))
@@ -965,6 +955,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       cov.cholesky <- trig.cov
       Cov.delta <- matrix(NA, ncol = ncol(cov.cholesky), nrow = ncol(cov.cholesky))
       
+      element.chol <- estimation$b[curseur:length(estimation$b)]
       for(i in 1:ncol(C1)){
         for(j in i:ncol(C1)){
           resultat <- 0
@@ -972,11 +963,11 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
           m <- j
           for(t in 1:min(i,j,ncol(Cov.delta))){
             for(s in 1:min(k,m,ncol(Cov.delta))){
-              resultat <- resultat + C1[j,t]*C1[m,s]*cov.cholesky[i+t-1,k+s-1] +
-                C1[j,t]*C1[k,s]*cov.cholesky[i+t-1,m+s-1] +
-                C1[i,t]*C1[m,s]*cov.cholesky[j+t-1,k+s-1] +
-                C1[i,t]*C1[k,s]*cov.cholesky[j+t-1,m+s-1] 
-              
+              resultat <- resultat + 
+                C1[j,t]*C1[m,s]*cov.cholesky[Index.C1[i,t],Index.C1[k,s]] +
+                C1[j,t]*C1[k,s]*cov.cholesky[Index.C1[i,t],Index.C1[m,s]] +
+                C1[i,t]*C1[m,s]*cov.cholesky[Index.C1[j,t],Index.C1[k,s]] +
+                C1[i,t]*C1[k,s]*cov.cholesky[Index.C1[j,t],Index.C1[m,s]]
             }
           }
           sd.param <- c(sd.param,sqrt(resultat))
@@ -988,6 +979,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
       cov.cholesky <- trig.cov
       Cov.delta <- matrix(NA, ncol = ncol(cov.cholesky), nrow = ncol(cov.cholesky))
       
+      element.chol <- estimation$b[(borne1+1):borne3]
       for(i in 1:ncol(C3)){
         for(j in i:ncol(C3)){
           resultat <- 0
@@ -995,11 +987,11 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
           m <- j
           for(t in 1:min(i,j,ncol(Cov.delta))){
             for(s in 1:min(k,m,ncol(Cov.delta))){
-              resultat <- resultat + C3[j,t]*C3[m,s]*cov.cholesky[i+t-1,k+s-1] +
-                C3[j,t]*C3[k,s]*cov.cholesky[i+t-1,m+s-1] +
-                C3[i,t]*C3[m,s]*cov.cholesky[j+t-1,k+s-1] +
-                C3[i,t]*C3[k,s]*cov.cholesky[j+t-1,m+s-1] 
-              
+              resultat <- resultat + 
+                C3[j,t]*C3[m,s]*cov.cholesky[Index.C3[i,t],Index.C3[k,s]] +
+                C3[j,t]*C3[k,s]*cov.cholesky[Index.C3[i,t],Index.C3[m,s]] +
+                C3[i,t]*C3[m,s]*cov.cholesky[Index.C3[j,t],Index.C3[k,s]] +
+                C3[i,t]*C3[k,s]*cov.cholesky[Index.C3[j,t],Index.C3[m,s]]
             }
           }
           sd.param <- c(sd.param,sqrt(resultat))
@@ -1014,6 +1006,11 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
     C1[lower.tri(C1, diag=T)] <- estimation$b[curseur:length(estimation$b)]
     C1 <- as.matrix(C1)
+    
+    Index.C1 <- matrix(rep(0,(nb.e.a)**2),nrow=nb.e.a,ncol=nb.e.a)
+    Index.C1[lower.tri(Index.C1, diag=T)] <- 1:(choose(nb.e.a,2)+nb.e.a)
+    Index.C1 <- as.matrix(Index.C1)
+    
     MatCov <- C1%*%t(C1)
     param_est <- c(param_est,unique(c(t(MatCov))))
     var_trans <- matrix(rep(0,length(estimation$b)**2),nrow=length(estimation$b),ncol=length(estimation$b))
@@ -1023,7 +1020,7 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
     diag(trig.cov) <- diag(trig.cov)/2
     cov.cholesky <- trig.cov
     Cov.delta <- matrix(NA, ncol = ncol(cov.cholesky), nrow = ncol(cov.cholesky))
-    
+    element.chol <- estimation$b[curseur:length(estimation$b)]
     for(i in 1:ncol(C1)){
       for(j in i:ncol(C1)){
         resultat <- 0
@@ -1031,17 +1028,16 @@ lsjm <- function(formFixed, formRandom, formGroup, formSurv, timeVar, data.long,
         m <- j
         for(t in 1:min(i,j,ncol(Cov.delta))){
           for(s in 1:min(k,m,ncol(Cov.delta))){
-            resultat <- resultat + C1[j,t]*C1[m,s]*cov.cholesky[i+t-1,k+s-1] +
-              C1[j,t]*C1[k,s]*cov.cholesky[i+t-1,m+s-1] +
-              C1[i,t]*C1[m,s]*cov.cholesky[j+t-1,k+s-1] +
-              C1[i,t]*C1[k,s]*cov.cholesky[j+t-1,m+s-1] 
-            
+            resultat <- resultat + 
+              C1[j,t]*C1[m,s]*cov.cholesky[Index.C1[i,t],Index.C1[k,s]] +
+              C1[j,t]*C1[k,s]*cov.cholesky[Index.C1[i,t],Index.C1[m,s]] +
+              C1[i,t]*C1[m,s]*cov.cholesky[Index.C1[j,t],Index.C1[k,s]] +
+              C1[i,t]*C1[k,s]*cov.cholesky[Index.C1[j,t],Index.C1[m,s]]
           }
         }
         sd.param <- c(sd.param,sqrt(resultat))
       }
     }
-  }
   }
   
   
