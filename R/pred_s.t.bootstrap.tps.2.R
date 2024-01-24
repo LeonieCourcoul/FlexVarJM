@@ -460,9 +460,9 @@ pred_s.t.bootstrap.tps.2 <- function(newdata,object, s, window, event = 1, nb.dr
         }
       }
       if((c("variability") %in% object$control$sharedtype )|| (object$control$competing_risk && c("variability") %in% object$control$sharedtype_CR )){
-        variability.GK.s_t <- matrix(rep(omega%*%t(Os),object$control$S2),nrow=object$control$S2,byrow = T) + b_om%*%t(Ws)
-        variability.GK.den <- matrix(rep(omega%*%t(Os.den),object$control$S2),nrow=object$control$S2,byrow = T) + b_om%*%t(Ws.den)
-        variability.GK.0_u <- matrix(rep(omega%*%t(O_0_u),object$control$S2),nrow=object$control$S2,byrow = T) + b_om%*%t(W_0_u)
+        variability.GK.s_t <- exp(matrix(rep(omega%*%t(Os),object$control$S2),nrow=object$control$S2,byrow = T) + b_om%*%t(Ws))
+        variability.GK.den <- exp(matrix(rep(omega%*%t(Os.den),object$control$S2),nrow=object$control$S2,byrow = T) + b_om%*%t(Ws.den))
+        variability.GK.0_u <- exp(matrix(rep(omega%*%t(O_0_u),object$control$S2),nrow=object$control$S2,byrow = T) + b_om%*%t(W_0_u))
         survLong_0_s <- survLong_0_s + alpha.sigma*variability.GK.den
         survLong_0_u <- survLong_0_u + alpha.sigma*variability.GK.0_u
         if(event == 1){
