@@ -551,6 +551,7 @@ goodness_of_fit <- function(object, graph = FALSE, break.times = NULL){
       
     }
     else{
+      Sigma.re <- MatCov%*%t(MatCov)
       binit <- mvtnorm::rmvnorm(1, mean = rep(0, x$control$nb.e.a), Sigma.re)
     }
     
