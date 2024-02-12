@@ -539,7 +539,7 @@ pred_s.t.bootstrap.tps.2 <- function(newdata,object, s, window, event = 1, nb.dr
               mat_h0s <- matrix(gamma.CR,ncol=1)
               h_0.GK_0_s.CR <- (wk*exp(Bs.CR.den%*%mat_h0s))
               h_0.GK_0_u.CR <- exp(Bs_CR_0_u%*%mat_h0s)*rep(wk, length(wk))
-              if(event == 1){
+              if(event == 2){
                 h_0.GK_s_t <- (wk*exp(Bs.CR%*%mat_h0s))
               }
             }
