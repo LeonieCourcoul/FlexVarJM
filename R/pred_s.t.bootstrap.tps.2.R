@@ -191,7 +191,6 @@ pred_s.t.bootstrap.tps.2 <- function(newdata,object, s, window, event = 1, nb.dr
       ###Parameters###
       ################
       curseur <- 1
-      param <- object$result_step2$result_step2$b
       #Manage parameters
       #Evenement 1 :
       ## Risque de base :
