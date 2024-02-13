@@ -359,7 +359,7 @@ pred_s.t.bootstrap.tps.2 <- function(newdata,object, s, window, event = 1, nb.dr
         }
         else{
           borne1 <- curseur + choose(n = object$control$nb.e.a, k = 2) + object$control$nb.e.a - 1
-          C1 <- matrix(rep(0,(nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
+          C1 <- matrix(rep(0,(object$control$nb.e.a)**2),nrow=object$control$nb.e.a,ncol=object$control$nb.e.a)
           C1[lower.tri(C1, diag=T)] <- param[curseur:borne1]
           borne3 <- borne1 + choose(n = object$control$nb.e.a.sigma, k = 2) + object$control$nb.e.a.sigma
           C3 <- matrix(rep(0,(object$control$nb.e.a.sigma)**2),nrow=object$control$nb.e.a.sigma,ncol=object$control$nb.e.a.sigma)
@@ -394,9 +394,6 @@ pred_s.t.bootstrap.tps.2 <- function(newdata,object, s, window, event = 1, nb.dr
         O_base <- list.var$X
         W_base <- list.var$U
       }
-      
-      
-      
       if(is.null(nrow(X_base))){
         if(object$control$variability_hetero){
           sigma.long <- exp((omega%*%O_base)[1,1] + b_om%*%W_base)
@@ -417,6 +414,142 @@ pred_s.t.bootstrap.tps.2 <- function(newdata,object, s, window, event = 1, nb.dr
           }
           CV <- (beta%*%X_base[k,])[1,1] + b_al%*%U[k,]
           f_Y_b_sigma <- f_Y_b_sigma*dnorm(x = y.new.prog[k], mean = CV, sd = sigma.long)
+        }
+      }
+      
+      #####################
+      # Survival part #
+      #####################
+      
+      ######## Table creation
+      ### Between s and s+t and between 0 and s
+      #browser()
+      data.GaussKronrod.1 <- data.GaussKronrod2(data.long.until.time.s.id,a=s,b=s+window,k = object$control$nb_pointsGK)
+      P.1 <- data.GaussKronrod.1$P
+      st.1 <- data.GaussKronrod.1$st
+      wk.1 <- data.GaussKronrod.1$wk
+      data.id.1 <- data.GaussKronrod.1$data.id2
+      data.GaussKronrod.den <- data.GaussKronrod(data.long.until.time.s.id,Time=s,k = object$control$nb_pointsGK)
+      P.den <- data.GaussKronrod.den$P
+      st.den <- data.GaussKronrod.den$st
+      wk.den <- data.GaussKronrod.den$wk
+      data.id.den <- data.GaussKronrod.den$data.id2
+      
+      ### Matrix for current value and slope
+      if((c("variability") %in% object$control$sharedtype )|| (object$control$competing_risk && c("variability") %in% object$control$sharedtype_CR )){
+        list.data.GK.current.sigma <- data.time(data.id.1, c(t(st.1)),
+                                                object$control$formFixedVar, object$control$formRandomVar,object$control$timeVar)
+        Os <- list.data.GK.current.sigma$Xtime
+        Ws <- list.data.GK.current.sigma$Utime
+        #Sigma.current.GK <- exp(matrix(rep(omega%*%t(Os),object$control$S2),nrow=object$control$S2,byrow = T) + b_om%*%t(Ws))
+        
+        list.data.GK.current.sigma.den <- data.time(data.id.den, c(t(st.den)),
+                                                    object$control$formFixedVar, object$control$formRandomVar,object$control$timeVar)
+        Os.den <- list.data.GK.current.sigma.den$Xtime
+        Ws.den <- list.data.GK.current.sigma.den$Utime
+        #Sigma.current.den <- exp(matrix(rep(omega%*%t(Os.den),object$control$S2),nrow=object$control$S2,byrow = T) + b_om%*%t(Ws.den))
+        
+        #Sigma.current.0_u <- matrix(rep(beta%*%t(X_0_LT_i),S),nrow=S,byrow = T) + b_y%*%t(U_0_LT_i)
+      }
+      if((c("current value") %in% object$control$sharedtype )|| (object$control$competing_risk && c("current value") %in% object$control$sharedtype_CR )){
+        list.data.GK.current <-  data.time(data.id.1, c(t(st.1)),
+                                           object$control$formFixed, object$control$formRandom,object$control$timeVar)
+        Xs <- list.data.GK.current$Xtime
+        Us <- list.data.GK.current$Utime
+        
+        list.data.GK.current.den <-  data.time(data.id.den, c(t(st.den)),
+                                               object$control$formFixed, object$control$formRandom,object$control$timeVar)
+        Xs.den <- list.data.GK.current.den$Xtime
+        Us.den <- list.data.GK.current.den$Utime
+      }
+      if((c("slope") %in% object$control$sharedtype )|| (object$control$competing_risk && c("slope") %in% object$control$sharedtype_CR )){
+        list.data.GK.slope <-  data.time(data.id.1, c(t(st.1)),
+                                         object$control$formSlopeFixed, object$control$formSlopeRandom,object$control$timeVar)
+        Xs.slope <- list.data.GK.slope$Xtime
+        Us.slope <- list.data.GK.slope$Utime
+        
+        list.data.GK.slope.den <-  data.time(data.id.den, c(t(st.den)),
+                                             object$control$formSlopeFixed, object$control$formSlopeRandom,object$control$timeVar)
+        Xs.slope.den <- list.data.GK.slope.den$Xtime
+        Us.slope.den <- list.data.GK.slope.den$Utime
+        
+        #slope.GK <- matrix(rep(beta[object$control$indices_beta_slope]%*%t(Xs.slope),object$control$S2),nrow=object$control$S2,byrow = T) + b_al[,-1]%*%t(Us.slope)
+      }
+      #### lambda0
+      if(object$control$hazard_baseline == "Exponential"){
+        mfZ <- model.frame(object$control$formSurv, data = data.long.until.time.s.id)
+        Z <- model.matrix(object$control$formSurv, mfZ)
+      }else{
+        if(object$control$hazard_baseline == "Weibull" || object$control$hazard_baseline == "Gompertz"){
+          mfZ <- model.frame(object$control$formSurv, data = data.long.until.time.s.id)
+          Z <- model.matrix(object$control$formSurv, mfZ)
+        }else{
+          if(object$control$hazard_baseline == "Splines"){
+            mfZ <- model.frame(object$control$formSurv, data = data.long.until.time.s.id)
+            Z <- model.matrix(object$control$formSurv, mfZ)
+            Z <- Z[,-1]
+            Bs <- splines::splineDesign(object$control$knots.hazard_baseline.splines, c(t(st.1)), ord = 4L)
+            Bs.den <- splines::splineDesign(object$control$knots.hazard_baseline.splines, c(t(st.den)), ord = 4L)
+          }else{
+            stop("This type of base survival function is not implemented.")
+          }
+        }
+      }
+      
+      ### Same for competing risk
+      if(object$control$competing_risk){
+        
+        if(object$control$hazard_baseline_CR == "Exponential"){
+          mfZ.CR <- model.frame(object$control$formSurv_CR, data = data.long.until.time.s.id)
+          Z_CR <- model.matrix(object$control$formSurv_CR, mfZ.CR)
+        }else{
+          if(object$control$hazard_baseline_CR == "Weibull" || object$control$hazard_baseline_CR == "Gompertz"){
+            mfZ.CR <- model.frame(object$control$formSurv_CR, data = data.long.until.time.s.id)
+            Z_CR <- model.matrix(object$control$formSurv_CR, mfZ.CR)
+          }else{
+            if(object$control$hazard_baseline_CR == "Splines"){
+              mfZ.CR <- model.frame(object$control$formSurv_CR, data = data.long.until.time.s.id)
+              Z_CR <- model.matrix(object$control$formSurv_CR, mfZ.CR)
+              Z_CR <- Z_CR[,-1]
+              Bs.CR <- splines::splineDesign(object$control$knots.hazard_baseline.splines.CR, c(t(st.1)), ord = 4L)
+              Bs.CR.den <- splines::splineDesign(object$control$knots.hazard_baseline.splines.CR, c(t(st.den)), ord = 4L)
+              # if(object$control$left_trunc){
+              #   Bs.0.CR <- splines::splineDesign(rr, c(t(st.0)), ord = 4L)
+              # }
+            }else{
+              stop("This type of base survival function is not implemented.")
+            }
+          }
+        }
+      }
+      
+      ### Between 0 and u (double integral)
+      st_0_u <- c(); X_0_u <- c(); U_0_u <- c(); Xslope_0_u <- c(); Uslope_0_u <- c(); Bs_0_u <- c(); Bs_CR_0_u <- c(); O_0_u <- c(); W_0_u <- c()
+      data.id.integrale <- data.long.until.time.s.id
+      for(st.integrale in st.1){
+        list.GK_0_st.2 <- data.GaussKronrod(data.id.integrale, Time = st.integrale, k = nb_pointsGK)
+        st.2 <- list.GK_0_st.2$st
+        st_0_u <- rbind(st_0_u, st.2)
+        if(("variability" %in% object$control$sharedtype) || (object$control$competing_risk && "variability" %in% object$control$sharedtype_CR)){
+          list.data.GK_0_u <- data.time(list.GK_0_st.2$data.id2, c(t(st.2)),object$control$formFixedVar, object$control$formRandomVar,object$control$timeVar)
+          O_0_st_u <- list.data.GK_0_u$Xtime; W_0_st_u <- list.data.GK_0_u$Utime
+          O_0_u <- rbind(O_0_u,O_0_st_u); W_0_u <- rbind(W_0_u,W_0_st_u)
+        }
+        if(("current value" %in% object$control$sharedtype) || (object$control$competing_risk && "current value" %in% object$control$sharedtype_CR)){
+          list.data.GK_0_u <- data.time(list.GK_0_st.2$data.id2, c(t(st.2)),object$control$formFixed, object$control$formRandom,object$control$timeVar)
+          X_0_st_u <- list.data.GK_0_u$Xtime; U_0_st_u <- list.data.GK_0_u$Utime
+          X_0_u <- rbind(X_0_u,X_0_st_u); U_0_u <- rbind(U_0_u,U_0_st_u)
+        }
+        if(("slope" %in% object$control$sharedtype) || (object$control$competing_risk && "slope" %in% object$control$sharedtype_CR)){
+          list.data.GK_0_u <- data.time(list.GK_0_st.2$data.id2, c(t(st.2)),object$control$formSlopeFixed, object$control$formSlopeRandom,object$control$timeVar)
+          Xslope_0_st_u <- list.data.GK_0_u$Xtime; Uslope_0_st_u <- list.data.GK_0_u$Utime
+          Xslope_0_u <- rbind(Xslope_0_u,Xslope_0_st_u); Uslope_0_u <- rbind(Uslope_0_u,Uslope_0_st_u)
+        }
+        if(object$control$hazard_baseline == "Splines"){
+          Bs_0_u <- rbind(Bs_0_u,splineDesign(object$control$knots.hazard_baseline.splines, c(t(st.2)), ord = 4L))
+        }
+        if(object$control$competing_risk && object$control$hazard_baseline == "Splines"){
+          Bs_CR_0_u <- rbind(Bs_CR_0_u,splineDesign(object$control$knots.hazard_baseline.splines.CR, c(t(st.2)), ord = 4L))
         }
       }
       
@@ -608,13 +741,13 @@ pred_s.t.bootstrap.tps.2 <- function(newdata,object, s, window, event = 1, nb.dr
       }
       else{
         Surv.den <- exp(-A1_0_s)
-        Surv.num <- rowSums(h*exp(-A1_0_u_red))
+        Surv.num <- P.1*rowSums(h*exp(-A1_0_u_red))
       }
       
       numerateur <- Surv.num*f_Y_b_sigma
       denominateur <- Surv.den*f_Y_b_sigma
       pred.current <- mean(numerateur)/mean(denominateur)
-      result <- c(result, numerateur/denominateur)
+      result <- c(result, pred.current)
     } 
     #parallel::stopCluster(cl)
   }

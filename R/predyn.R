@@ -114,6 +114,7 @@ predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500
     table.pred <- as.data.frame(table.pred)
     colnames(table.pred) <- c("ID","Time","Prediction","Median","ICinf","ICsup", "Empirical SD")
     graph.predyn <- NULL
+    result <- list(table.pred = table.pred, bootstrap = bootstrap)
   }
   else{
     for(i in unique(id)){
@@ -152,9 +153,10 @@ predyn <- function(newdata, object, s, times, event = 1, IC = 95, nb.draws = 500
       graphics::mtext("Probability of event", cex = 1, side = 4, line = 3, font.lab = 1)
       
     }
+    result <- table.pred
   }
   
 
-  result <- table.pred
+  #result <- table.pred
   result
 }
