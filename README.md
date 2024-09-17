@@ -7,6 +7,7 @@
 
 [![R-CMD-check](https://github.com/LeonieCourcoul/FlexVarJM/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/LeonieCourcoul/FlexVarJM/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
+WARNING: this package is not maintained anymore. Please consider the CRAN version instead of this one.
 
 The goal of FlexVarJM is to estimate joint model with subject-specific
 time-dependent variability.
